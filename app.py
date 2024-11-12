@@ -64,9 +64,6 @@ def your_endpoint():
         text = pytesseract.image_to_string(Image.open(filename))
         print(f"Text from {image_path}:\n{text}\n")
 
-        cv2.imshow(image)
-        cv2.imshow(gray)
-        cv2.waitKey(0)
         return text, filename  # Return the extracted text and temporary filename
 
     all_text = ""
@@ -148,7 +145,68 @@ def your_endpoint():
 
         case ('cv', _):
             # Placeholder untuk kasus 'd'
-            masa_berlaku["case_d"] = "Logika untuk doc_type d"
+            pattern = r"(\b\w+\s\d{4}\s-\s(?:\w+\s\d{4}|Present))\s*:\s*(.*)\n([\s\S]+?)(?=\n\n|\Z)"
+            nama_pattern = r"nama|Nama\s*:\s*(.*)"
+
+            nama_match = re.search(nama_pattern, text)
+            nama = nama_match.group(1) if nama_match else None
+
+            # Parse entries into a list of dictionaries
+            matches = re.findall(pattern, text)
+            experiences = []
+
+            # Function to convert date strings to datetime objects
+            def parse_date(date_str):
+                try:
+                    return datetime.strptime(date_str, "%B %Y")
+                except ValueError:
+                    return None  # If the date is "Present", return None
+
+            # Loop through matches and parse dates
+            for match in matches:
+                date_range, role, project_details = match
+
+                # Extract company name from the previous line in text
+                # by matching company name preceding the date range line
+                company = re.search(r"(.*)\n" + re.escape(date_range), text)
+                company_name = company.group(1).strip() if company else "Unknown Company"
+
+                start_date_str, end_date_str = date_range.split(" - ")
+
+                # Convert start and end dates to datetime objects
+                start_date = parse_date(start_date_str)
+                end_date = parse_date(end_date_str) if end_date_str != "Present" else datetime.now()
+
+                # Calculate experience duration in years
+                duration = (end_date - start_date).days / 365.25
+
+                experiences.append({
+                    "company": company_name,
+                    "role": role if role else "No role specified",
+                    "project": project_details.strip().replace("\n", " "),
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "duration_years": duration,
+                    "nama": nama
+                })
+
+            # Determine the latest experience with a project
+            if any(exp["end_date"] == datetime.now() for exp in experiences):
+                # Case with "Present": Filter and choose the first experience with "Present"
+                latest_experience = next(exp for exp in experiences if exp["end_date"] == datetime.now())
+            else:
+                # Case with only past date ranges: Sort by end date to find the latest
+                latest_experience = sorted(experiences, key=lambda x: x["end_date"], reverse=True)[0]
+
+            # Calculate the total years of experience
+            total_years = sum(exp["duration_years"] for exp in experiences)
+
+            # Prepare output as JSON with only latest project experience and total years of experience
+            output = {
+                "latest_project": latest_experience["project"],
+                "total_years_of_experience": round(total_years, 2),
+                "nama": nama
+            }
 
         case ('keuangan', _):
             # Placeholder untuk kasus 'e'
