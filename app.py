@@ -1,5 +1,59 @@
+#Impoorting necessary library
+from pdf2image import convert_from_path
+import pytesseract
+import cv2
+from PIL import Image
+import os
+import argparse
+import re
+import json
 import re
 from datetime import datetime, timedelta
+
+
+# Preprocessing
+def process_image(image_path, preprocess_method):
+    image = cv2.imread(image_path)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    if preprocess_method == "trunc":
+        gray = cv2.threshold(gray, 127, 255, cv2.THRESH_trunc)[1]
+
+    filename = "{}.png".format(os.getpid())
+    cv2.imwrite(filename, gray)
+
+    text = pytesseract.image_to_string(Image.open(filename))
+    print(f"Text from {image_path}:\n{text}\n")
+
+    cv2_imshow(image)
+    cv2_imshow(gray)
+    cv2.waitKey(0)
+    return text, filename  # Return the extracted text and temporary filename
+
+all_text = ""
+temporary_files = []  # List to store temporary filenames
+
+# Loop through image files
+i = 1
+while True:
+    image_path = f"page_image_{i}.jpg"
+    if os.path.exists(image_path):
+        text, temp_file = process_image(image_path, args["preprocess"])
+        all_text += text
+        temporary_files.append(temp_file)  # Add temporary filename to list
+        i += 1
+    else:
+        break
+
+with open("all_text.txt", "w") as f:
+    f.write(all_text)
+print("All images processed.")
+
+# Delete temporary files after processing all images
+for temp_file in temporary_files:
+    os.remove(temp_file)
+print("Temporary files deleted.")
+
 
 # Contoh nilai input
 doc_type = 'a'  # Ubah nilai ini sesuai dengan kasus
@@ -20,7 +74,12 @@ masa_berlaku = {}
 
 # Menggunakan match-case untuk menentukan regex pattern berdasarkan doc_type dan sub_doc_type
 match (doc_type, sub_doc_type):
+
     case ('legalitas', _):
+        # Placeholder untuk kasus 'c'
+        masa_berlaku["case_c"] = "Logika untuk doc_type c"
+    
+    case ('tenaga_ahli', _):
         
         # Regex pattern untuk doc_type 'a'
         date_pattern = re.compile(r"sampai(?: dengan tanggal)? (\d{1,2})\s([A-Za-z]+)\s(\d{4})")
@@ -39,41 +98,49 @@ match (doc_type, sub_doc_type):
             expiration_date = tanggal_terbit + timedelta(days=365 * years)
             masa_berlaku[f"case_{match.start()}"] = expiration_date.strftime("%d-%m-%Y")
 
-    case ('b', _):
+    case ('kontrak', _):
         # Placeholder untuk kasus 'b'
         masa_berlaku["case_b"] = "Logika untuk doc_type b"
 
-    case ('c', _):
-        # Placeholder untuk kasus 'c'
-        masa_berlaku["case_c"] = "Logika untuk doc_type c"
-
-    case ('d', _):
+    case ('cv', _):
         # Placeholder untuk kasus 'd'
         masa_berlaku["case_d"] = "Logika untuk doc_type d"
 
-    case ('e', _):
+    case ('keuangan', _):
         # Placeholder untuk kasus 'e'
         masa_berlaku["case_e"] = "Logika untuk doc_type e"
 
-    case ('f', _):
+    case ('proyek', _):
         # Placeholder untuk kasus 'f'
         masa_berlaku["case_f"] = "Logika untuk doc_type f"
 
-    case ('g', _):
+    case ('pengurus'|"pemegang_saham", _):
         # Placeholder untuk kasus 'g'
         masa_berlaku["case_g"] = "Logika untuk doc_type g"
 
-    case ('h', _):
+    case ('peralatan', _):
         # Placeholder untuk kasus 'h'
         masa_berlaku["case_h"] = "Logika untuk doc_type h"
 
-    case ('i', _):
+    case ('lain_lain', _):
         # Placeholder untuk kasus 'i'
         masa_berlaku["case_i"] = "Logika untuk doc_type i"
 
-    case ('j', _):
+    case ('surat_masuk', _):
         # Placeholder untuk kasus 'j'
         masa_berlaku["case_j"] = "Logika untuk doc_type j"
+
+    case ('surat_keluar', _):
+        # Placeholder untuk kasus 'j'
+        masa_berlaku["case_j"] = "Logika untuk doc_type j"
+
+    case ('sertifikat', _):
+        # Placeholder untuk kasus 'j'
+        masa_berlaku["case_j"] = "Logika untuk doc_type j"
+
+    case ('ppjb', _):
+        # Placeholder untuk kasus 'j'
+        masa_berlaku["case_j"] = "Logika untuk doc_type j"    
 
     case _:
         print("Doc_type atau sub_doc_type tidak dikenali, tidak ada pola yang cocok.")
