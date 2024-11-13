@@ -112,7 +112,41 @@ def your_endpoint():
 
         case ('legalitas', _):
             # Placeholder untuk kasus 'c'
-            masa_berlaku["case_c"] = "Logika untuk doc_type c"
+            patterns = {
+                "terbit_date":r"(?:di\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s*,\s*tanggal:\s*(\d{1,2}\s+[A-Za-z]+\s+\d{4}))|(?:[Dd]iterbitkan pertama tanggal|[Dd]iberikan pertama kali pada|[Tt]anggal:|[Dd]itetapkan di \w+,?)\s*(\d{1,2})\s(\w+)\s(\d{4})",
+                "validity_date": r"sampai(?: dengan tanggal)? (\d{1,2})\s([A-Za-z]+)\s(\d{4})",
+                "validity_years": r"berlaku (?:untuk|paling lama) (\d+)",
+                "penerbit": r"(?:\b[a-z]+(?:\s+[a-z]+)+\b\s+)([A-Z][^:]+)(?=\s*menetapkan\s+bahwa)|(?<=ditetapkan\s+oleh\s*:\s*)([A-Z][^:]+)|(?<=diterbitkan\s+sistem\s+)(\S+)(?=\s+berdasarkan)|(?<=^|\n)([A-Z][^:]+)(?=\s*menetapkan\s+bahwa)",
+                "certificate_number": r"No\. Reg\.\s([A-Za-z0-9\s]+)(?=\n)",
+                "competency": r"(?<=Competency:\n)(.*)"
+}
+            # Function to parse date strings with month name mapping
+            def parse_date(day, month_name, year):
+                month_number = month_mapping.get(month_name, "00")
+                return datetime.strptime(f"{day.zfill(2)}-{month_number}-{year}", "%d-%m-%Y")
+
+            # Extracting information using patterns
+            masa_berlaku = {}
+            tanggal_terbit = None
+
+            # Extract tanggal terbit
+            terbit_match = re.search(patterns["terbit_date"], text)
+            if terbit_match:
+                day, month_name, year = terbit_match.groups()
+                tanggal_terbit = parse_date(day, month_name, year)
+                masa_berlaku["tanggal_terbit"] = tanggal_terbit.strftime("%d-%m-%Y")
+
+            # Extract validity dates
+            for match in re.finditer(patterns["validity_date"], text):
+                day, month_name, year = match.groups()
+                formatted_date = parse_date(day, month_name, year).strftime("%d-%m-%Y")
+                masa_berlaku[f"case_{match.start()}"] = formatted_date
+
+            # Extract validity years and calculate expiration dates
+            for match in re.finditer(patterns["validity_years"], text):
+                years = int(match.group(1))
+                expiration_date = tanggal_terbit + timedelta(days=365 * years)
+                masa_berlaku[f"case_{match.start()}"] = expiration_date.strftime("%d-%m-%Y")
 
 
             # Custom output for 'legalitas' document type
@@ -129,7 +163,7 @@ def your_endpoint():
             
             # Define patterns for parsing
             patterns = {
-                "terbit_date": r"\b(?:Diterbitkan pertama tanggal|Diberikan pertama kali pada|tanggal:|Ditetapkan di \w+,?)\s*(\d{1,2})\s(\w+)\s(\d{4})",
+                "terbit_date": r"\b(?:[Dd]iterbitkan pertama tanggal|[Dd]iberikan pertama kali pada|[Tt]anggal:|[Dd]itetapkan di \w+,?)\s*(\d{1,2})\s(\w+)\s(\d{4})",
                 "validity_date": r"sampai(?: dengan tanggal)? (\d{1,2})\s([A-Za-z]+)\s(\d{4})",
                 "validity_years": r"berlaku (?:untuk|paling lama) (\d+)",
                 "nama": r"(?<=This is to certify that,\n)(.*)",
@@ -172,10 +206,8 @@ def your_endpoint():
             # Prepare output
             output = {
                 "document_type": "tenaga_ahli",
-                "status": "processed",
                 "tanggal_terbit": masa_berlaku.get("tanggal_terbit"),
                 "validity_period": masa_berlaku,
-                "additional_info": "Expert document processed with extracted validity dates",
                 "nama": nama,
                 "certificate_number": cert_number,
                 "competency": competency
