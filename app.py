@@ -44,6 +44,12 @@ def your_endpoint():
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(file_path)
 
+    try:
+        file.save(file_path)
+    except Exception as e:
+        app.logger.error(f"Error saving file: {e}")
+        return jsonify({"error": "Failed to save file"}), 500
+
     # Do something with doc_type and sub_doc_type
     result = {
         "doc_type": doc_type,
@@ -107,6 +113,17 @@ def your_endpoint():
         case ('legalitas', _):
             # Placeholder untuk kasus 'c'
             masa_berlaku["case_c"] = "Logika untuk doc_type c"
+
+
+            # Custom output for 'legalitas' document type
+            output = {
+                "document_type": "legalitas",
+                "status": "processed",
+                "additional_info": "Legal document information extracted successfully",
+                "masa_berlaku": masa_berlaku,
+                # Add any additional relevant fields here
+            }
+            return jsonify(output)
         
         case ('tenaga_ahli', _):
             
@@ -139,9 +156,27 @@ def your_endpoint():
                 expiration_date = tanggal_terbit + timedelta(days=365 * years)
                 masa_berlaku[f"case_{match.start()}"] = expiration_date.strftime("%d-%m-%Y")
 
+            output = {
+                "document_type": "tenaga_ahli",
+                "status": "processed",
+                "tanggal_terbit": masa_berlaku.get("tanggal_terbit"),
+                "validity_period": masa_berlaku,
+                "additional_info": "Expert document processed with extracted validity dates",
+                # Additional fields as needed
+            }
+            return jsonify(output)
+
         case ('kontrak', _):
             # Placeholder untuk kasus 'b'
             masa_berlaku["case_b"] = "Logika untuk doc_type b"
+
+            output = {
+                "document_type": "kontrak",
+                "status": "processed",
+                "contract_details": "Details specific to contract documents",
+                "masa_berlaku": masa_berlaku,
+            }
+            return jsonify(output)
 
         case ('cv', _):
             # Placeholder untuk kasus 'd'
@@ -206,46 +241,129 @@ def your_endpoint():
                 "latest_project": latest_experience["project"],
                 "total_years_of_experience": round(total_years, 2),
                 "nama": nama
+
             }
+
+            return jsonify(output)
+
+
 
         case ('keuangan', _):
             # Placeholder untuk kasus 'e'
             masa_berlaku["case_e"] = "Logika untuk doc_type e"
 
+            app.logger.warning("Unknown doc_type or sub_doc_type. No matching pattern.")
+            output = {
+                "error": "Unknown document type",
+                "doc_type": doc_type,
+                "sub_doc_type": sub_doc_type
+            }
+            return jsonify(output)
+
         case ('proyek', _):
             # Placeholder untuk kasus 'f'
             masa_berlaku["case_f"] = "Logika untuk doc_type f"
+
+            app.logger.warning("Unknown doc_type or sub_doc_type. No matching pattern.")
+            output = {
+                "error": "Unknown document type",
+                "doc_type": doc_type,
+                "sub_doc_type": sub_doc_type
+            }
+            return jsonify(output)
 
         case ('pengurus'|"pemegang_saham", _):
             # Placeholder untuk kasus 'g'
             masa_berlaku["case_g"] = "Logika untuk doc_type g"
 
+            app.logger.warning("Unknown doc_type or sub_doc_type. No matching pattern.")
+            output = {
+                "error": "Unknown document type",
+                "doc_type": doc_type,
+                "sub_doc_type": sub_doc_type
+            }
+            return jsonify(output)
+
         case ('peralatan', _):
             # Placeholder untuk kasus 'h'
             masa_berlaku["case_h"] = "Logika untuk doc_type h"
+
+            app.logger.warning("Unknown doc_type or sub_doc_type. No matching pattern.")
+            output = {
+                "error": "Unknown document type",
+                "doc_type": doc_type,
+                "sub_doc_type": sub_doc_type
+            }
+            return jsonify(output)
 
         case ('lain_lain', _):
             # Placeholder untuk kasus 'i'
             masa_berlaku["case_i"] = "Logika untuk doc_type i"
 
+            app.logger.warning("Unknown doc_type or sub_doc_type. No matching pattern.")
+            output = {
+                "error": "Unknown document type",
+                "doc_type": doc_type,
+                "sub_doc_type": sub_doc_type
+            }
+            return jsonify(output)
+
         case ('surat_masuk', _):
             # Placeholder untuk kasus 'j'
             masa_berlaku["case_j"] = "Logika untuk doc_type j"
+
+            app.logger.warning("Unknown doc_type or sub_doc_type. No matching pattern.")
+            output = {
+                "error": "Unknown document type",
+                "doc_type": doc_type,
+                "sub_doc_type": sub_doc_type
+            }
+            return jsonify(output)
 
         case ('surat_keluar', _):
             # Placeholder untuk kasus 'j'
             masa_berlaku["case_j"] = "Logika untuk doc_type j"
 
+            app.logger.warning("Unknown doc_type or sub_doc_type. No matching pattern.")
+            output = {
+                "error": "Unknown document type",
+                "doc_type": doc_type,
+                "sub_doc_type": sub_doc_type
+            }
+            return jsonify(output)
+
         case ('sertifikat', _):
             # Placeholder untuk kasus 'j'
             masa_berlaku["case_j"] = "Logika untuk doc_type j"
 
+            app.logger.warning("Unknown doc_type or sub_doc_type. No matching pattern.")
+            output = {
+                "error": "Unknown document type",
+                "doc_type": doc_type,
+                "sub_doc_type": sub_doc_type
+            }
+            return jsonify(output)
+
         case ('ppjb', _):
             # Placeholder untuk kasus 'j'
-            masa_berlaku["case_j"] = "Logika untuk doc_type j"    
+            masa_berlaku["case_j"] = "Logika untuk doc_type j"
+
+            app.logger.warning("Unknown doc_type or sub_doc_type. No matching pattern.")
+            output = {
+                "error": "Unknown document type",
+                "doc_type": doc_type,
+                "sub_doc_type": sub_doc_type
+            }
+            return jsonify(output)    
 
         case _:
-            print("Doc_type atau sub_doc_type tidak dikenali, tidak ada pola yang cocok.")
+            app.logger.warning("Unknown doc_type or sub_doc_type. No matching pattern.")
+            output = {
+                "error": "Unknown document type",
+                "doc_type": doc_type,
+                "sub_doc_type": sub_doc_type
+            }
+            return jsonify(output)
 
 
 if __name__ == '__main__':
