@@ -103,9 +103,10 @@ def your_endpoint():
         "Mei"|"May": "05", "Juni"|"Jun"|"June": "06", "Juli"|"Jul"|"July": "07", "Agustus"|"Agu"|"Aug"|"Augustus": "08",
         "September"|"Sep": "09", "Oktober"|"Okt"|"Oct"|"October": "10", "November"|"Nov": "11", "Desember"|"Des"|"Dec"|"December": "12"
     }
-
-    # Inisialisasi dictionary output
-    masa_berlaku = {}
+    # Function to parse date strings with month name mapping
+    def parse_date(day, month_name, year):
+        month_number = month_mapping.get(month_name, "00")
+        return datetime.strptime(f"{day.zfill(2)}-{month_number}-{year}", "%d-%m-%Y")
 
     # Menggunakan match-case untuk menentukan regex pattern berdasarkan doc_type dan sub_doc_type
     match (doc_type, sub_doc_type):
@@ -117,14 +118,9 @@ def your_endpoint():
                 "validity_date": r"sampai(?: dengan tanggal)? (\d{1,2})\s([A-Za-z]+)\s(\d{4})",
                 "validity_years": r"berlaku (?:untuk|paling lama) (\d+)",
                 "penerbit": r"(?:\b[a-z]+(?:\s+[a-z]+)+\b\s+)([A-Z][^:]+)(?=\s*menetapkan\s+bahwa)|(?<=ditetapkan\s+oleh\s*:\s*)([A-Z][^:]+)|(?<=diterbitkan\s+sistem\s+)(\S+)(?=\s+berdasarkan)|(?<=^|\n)([A-Z][^:]+)(?=\s*menetapkan\s+bahwa)",
-                "certificate_number": r"No\. Reg\.\s([A-Za-z0-9\s]+)(?=\n)",
-                "competency": r"(?<=Competency:\n)(.*)"
-}
-            # Function to parse date strings with month name mapping
-            def parse_date(day, month_name, year):
-                month_number = month_mapping.get(month_name, "00")
-                return datetime.strptime(f"{day.zfill(2)}-{month_number}-{year}", "%d-%m-%Y")
-
+                "doc_number": r"No\. Reg\.\s([A-Za-z0-9\s]+)(?=\n)|(?<=Nomor:\s*)(\d+)|(?<=Nomor:\n)(\d+)|(?<=Certificate No\.\s)([A-Za-z0-9\.\s]+?)(?=\n|$)|(?<=NOMOR INDUK BERUSAHA\s*:\s*)([A-Za-z0-9]+)(?=\n|$)",
+            }
+            
             # Extracting information using patterns
             masa_berlaku = {}
             tanggal_terbit = None
@@ -147,15 +143,21 @@ def your_endpoint():
                 years = int(match.group(1))
                 expiration_date = tanggal_terbit + timedelta(days=365 * years)
                 masa_berlaku[f"case_{match.start()}"] = expiration_date.strftime("%d-%m-%Y")
+            
+            # Extract 'penerbit'
+            penerbit_match = re.search(patterns["penerbit"], text)
+            penerbit = penerbit_match.group(0).strip() if penerbit_match else "N/A"
 
+            # Extract 'doc_number'
+            doc_number_match = re.search(patterns["doc_number"], text)
+            doc_number = doc_number_match.group(0).strip() if doc_number_match else "N/A"
 
             # Custom output for 'legalitas' document type
             output = {
                 "document_type": "legalitas",
-                "status": "processed",
-                "additional_info": "Legal document information extracted successfully",
+                "penerbit": penerbit,
                 "masa_berlaku": masa_berlaku,
-                # Add any additional relevant fields here
+                "doc_number":doc_number
             }
             return jsonify(output)
         
@@ -169,11 +171,7 @@ def your_endpoint():
                 "nama": r"(?<=This is to certify that,\n)(.*)",
                 "certificate_number": r"No\. Reg\.\s([A-Za-z0-9\s]+)(?=\n)",
                 "competency": r"(?<=Competency:\n)(.*)"
-}
-            # Function to parse date strings with month name mapping
-            def parse_date(day, month_name, year):
-                month_number = month_mapping.get(month_name, "00")
-                return datetime.strptime(f"{day.zfill(2)}-{month_number}-{year}", "%d-%m-%Y")
+            }
 
             # Extracting information using patterns
             masa_berlaku = {}
