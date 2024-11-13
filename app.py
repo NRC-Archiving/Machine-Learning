@@ -180,69 +180,54 @@ def your_endpoint():
 
         case ('cv', _):
             # Placeholder untuk kasus 'd'
-            pattern = r"(\b\w+\s\d{4}\s-\s(?:\w+\s\d{4}|Present))\s*:\s*(.*)\n([\s\S]+?)(?=\n\n|\Z)"
-            nama_pattern = r"nama|Nama\s*:\s*(.*)"
+            # Define patterns for parsing
+            patterns = {
+                "experience": r"(\b\w+\s\d{4}\s-\s(?:\w+\s\d{4}|Present))\s*:\s*(.*)\n([\s\S]+?)(?=\n\n|\Z)",
+                "nama": r"Nama\s*:\s*(.*)",
+                "ttl": r"Tempat & Tgl\. Lahir\s*:\s*(.*)",
+                "education": r"Pendidikan\s*:\s*(.*?)\s(.*?)\s*-\s*(\d{4})"
+            }
 
-            nama_match = re.search(nama_pattern, text)
-            nama = nama_match.group(1) if nama_match else None
-
-            # Parse entries into a list of dictionaries
-            matches = re.findall(pattern, text)
-            experiences = []
-
-            # Function to convert date strings to datetime objects
+            # Function to parse date strings
             def parse_date(date_str):
-                try:
-                    return datetime.strptime(date_str, "%B %Y")
-                except ValueError:
-                    return None  # If the date is "Present", return None
+                return datetime.strptime(date_str, "%B %Y") if date_str != "Present" else datetime.now()
 
-            # Loop through matches and parse dates
-            for match in matches:
-                date_range, role, project_details = match
+            # Extract personal details
+            nama = re.search(patterns["nama"], text).group(1)
+            ttl = re.search(patterns["ttl"], text).group(1)
+            education = re.search(patterns["education"], text)
+            univ, gelar, lulus = education.groups()
 
-                # Extract company name from the previous line in text
-                # by matching company name preceding the date range line
-                company = re.search(r"(.*)\n" + re.escape(date_range), text)
-                company_name = company.group(1).strip() if company else "Unknown Company"
-
-                start_date_str, end_date_str = date_range.split(" - ")
-
-                # Convert start and end dates to datetime objects
-                start_date = parse_date(start_date_str)
-                end_date = parse_date(end_date_str) if end_date_str != "Present" else datetime.now()
-
-                # Calculate experience duration in years
+            # Parse experience entries
+            experiences = []
+            for date_range, role, project in re.findall(patterns["experience"], text):
+                company_name = re.search(r"(.*)\n" + re.escape(date_range), text).group(1).strip()
+                start_date, end_date = map(parse_date, date_range.split(" - "))
                 duration = (end_date - start_date).days / 365.25
 
                 experiences.append({
                     "company": company_name,
-                    "role": role if role else "No role specified",
-                    "project": project_details.strip().replace("\n", " "),
+                    "role": role or "No role specified",
+                    "project": project.replace("\n", " "),
                     "start_date": start_date,
                     "end_date": end_date,
-                    "duration_years": duration,
-                    "nama": nama
+                    "duration_years": duration
                 })
 
-            # Determine the latest experience with a project
-            if any(exp["end_date"] == datetime.now() for exp in experiences):
-                # Case with "Present": Filter and choose the first experience with "Present"
-                latest_experience = next(exp for exp in experiences if exp["end_date"] == datetime.now())
-            else:
-                # Case with only past date ranges: Sort by end date to find the latest
-                latest_experience = sorted(experiences, key=lambda x: x["end_date"], reverse=True)[0]
-
-            # Calculate the total years of experience
-            total_years = sum(exp["duration_years"] for exp in experiences)
+            # Determine the latest project experience and total years of experience
+            latest_experience = max(experiences, key=lambda x: x["end_date"])
+            total_years = round(sum(exp["duration_years"] for exp in experiences), 2)
 
             # Prepare output as JSON with only latest project experience and total years of experience
             output = {
-                "latest_project": latest_experience["project"],
-                "total_years_of_experience": round(total_years, 2),
-                "nama": nama
-
-            }
+                    "latest_project": latest_experience["project"],
+                    "total_years_of_experience": total_years,
+                    "nama": nama,
+                    "ttl": ttl,
+                    "gelar": gelar,
+                    "univ": univ,
+                    "lulus": lulus
+                }
 
             return jsonify(output)
 
