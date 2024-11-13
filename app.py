@@ -127,42 +127,58 @@ def your_endpoint():
         
         case ('tenaga_ahli', _):
             
-            # Regex pattern untuk doc_type 'a'
-            terbit_pattern = re.compile(r"\b(?:diterbitkan pertama tanggal|diberikan pertama kali pada|tanggal:|ditetapkan di \w+,?)\s*(\d{1,2})\s(\w+)\s(\d{4})")
-            date_pattern = re.compile(r"sampai(?: dengan tanggal)? (\d{1,2})\s([A-Za-z]+)\s(\d{4})")
-            years_pattern = re.compile(r"berlaku (?:untuk|paling lama) (\d+)")
-            
+            # Define patterns for parsing
+            patterns = {
+                "terbit_date": r"\b(?:Diterbitkan pertama tanggal|Diberikan pertama kali pada|tanggal:|Ditetapkan di \w+,?)\s*(\d{1,2})\s(\w+)\s(\d{4})",
+                "validity_date": r"sampai(?: dengan tanggal)? (\d{1,2})\s([A-Za-z]+)\s(\d{4})",
+                "validity_years": r"berlaku (?:untuk|paling lama) (\d+)",
+                "nama": r"(?<=This is to certify that,\n)(.*)",
+                "certificate_number": r"No\. Reg\.\s([A-Za-z0-9\s]+)(?=\n)",
+                "competency": r"(?<=Competency:\n)(.*)"
+}
+            # Function to parse date strings with month name mapping
+            def parse_date(day, month_name, year):
+                month_number = month_mapping.get(month_name, "00")
+                return datetime.strptime(f"{day.zfill(2)}-{month_number}-{year}", "%d-%m-%Y")
+
+            # Extracting information using patterns
             masa_berlaku = {}
             tanggal_terbit = None
 
-            # Determine tanggal_terbit from terbit_pattern
-            terbit_match = terbit_pattern.search(text)
+            # Extract tanggal terbit
+            terbit_match = re.search(patterns["terbit_date"], text)
             if terbit_match:
                 day, month_name, year = terbit_match.groups()
-                month_number = month_mapping.get(month_name, "00")
-                tanggal_terbit = datetime.strptime(f"{day.zfill(2)}-{month_number}-{year}", "%d-%m-%Y")
+                tanggal_terbit = parse_date(day, month_name, year)
                 masa_berlaku["tanggal_terbit"] = tanggal_terbit.strftime("%d-%m-%Y")
 
-            # Ekstrak informasi tanggal dan masa berlaku sesuai dengan snippet sebelumnya
-            for match in date_pattern.finditer(text):
+            # Extract validity dates
+            for match in re.finditer(patterns["validity_date"], text):
                 day, month_name, year = match.groups()
-                month_number = month_mapping.get(month_name, "00")
-                formatted_date = f"{day.zfill(2)}-{month_number}-{year}"
+                formatted_date = parse_date(day, month_name, year).strftime("%d-%m-%Y")
                 masa_berlaku[f"case_{match.start()}"] = formatted_date
 
-            # Ekstrak informasi tahun untuk menghitung tanggal kedaluwarsa
-            for match in years_pattern.finditer(text):
+            # Extract validity years and calculate expiration dates
+            for match in re.finditer(patterns["validity_years"], text):
                 years = int(match.group(1))
                 expiration_date = tanggal_terbit + timedelta(days=365 * years)
                 masa_berlaku[f"case_{match.start()}"] = expiration_date.strftime("%d-%m-%Y")
 
+            # Extract additional fields
+            nama = re.search(patterns["nama"], text).group(1).strip() if re.search(patterns["nama"], text) else None
+            cert_number = re.search(patterns["certificate_number"], text).group(1).strip() if re.search(patterns["certificate_number"], text) else None
+            competency = re.search(patterns["competency"], text).group(1).strip() if re.search(patterns["competency"], text) else None
+
+            # Prepare output
             output = {
                 "document_type": "tenaga_ahli",
                 "status": "processed",
                 "tanggal_terbit": masa_berlaku.get("tanggal_terbit"),
                 "validity_period": masa_berlaku,
                 "additional_info": "Expert document processed with extracted validity dates",
-                # Additional fields as needed
+                "nama": nama,
+                "certificate_number": cert_number,
+                "competency": competency
             }
             return jsonify(output)
 
