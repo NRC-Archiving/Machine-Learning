@@ -98,11 +98,26 @@ def your_endpoint():
 
 
     # Mapping nama bulan ke nomor bulan
-    month_mapping = {
-        "Januari"|"Jan"|"January": "01", "Februari"|"Feb"|"February": "02", "Maret"|"Mar"|"March": "03", "April"|"Apr": "04",
-        "Mei"|"May": "05", "Juni"|"Jun"|"June": "06", "Juli"|"Jul"|"July": "07", "Agustus"|"Agu"|"Aug"|"Augustus": "08",
-        "September"|"Sep": "09", "Oktober"|"Okt"|"Oct"|"October": "10", "November"|"Nov": "11", "Desember"|"Des"|"Dec"|"December": "12"
-    }
+    month_names = [
+    ["Januari", "Jan", "January"],
+    ["Februari", "Feb", "February"],
+    ["Maret", "Mar", "March"],
+    ["April", "Apr"],
+    ["Mei", "May"],
+    ["Juni", "Jun", "June"],
+    ["Juli", "Jul", "July"],
+    ["Agustus", "Agu", "Aug", "August"],
+    ["September", "Sep"],
+    ["Oktober", "Okt", "Oct", "October"],
+    ["November", "Nov"],
+    ["Desember", "Des", "Dec", "December"]
+    ]
+
+    month_mapping = {}
+    for i, names in enumerate(month_names):
+        for name in names:
+            month_mapping[name] = f"{i + 1:02}"
+
     # Function to parse date strings with month name mapping
     def parse_date(day, month_name, year):
         month_number = month_mapping.get(month_name, "00")
@@ -126,30 +141,30 @@ def your_endpoint():
             tanggal_terbit = None
 
             # Extract tanggal terbit
-            terbit_match = re.search(patterns["terbit_date"], text)
+            terbit_match = re.search(patterns["terbit_date"], all_text)
             if terbit_match:
                 day, month_name, year = terbit_match.groups()
                 tanggal_terbit = parse_date(day, month_name, year)
                 masa_berlaku["tanggal_terbit"] = tanggal_terbit.strftime("%d-%m-%Y")
 
             # Extract validity dates
-            for match in re.finditer(patterns["validity_date"], text):
+            for match in re.finditer(patterns["validity_date"], all_text):
                 day, month_name, year = match.groups()
                 formatted_date = parse_date(day, month_name, year).strftime("%d-%m-%Y")
                 masa_berlaku[f"case_{match.start()}"] = formatted_date
 
             # Extract validity years and calculate expiration dates
-            for match in re.finditer(patterns["validity_years"], text):
+            for match in re.finditer(patterns["validity_years"], all_text):
                 years = int(match.group(1))
                 expiration_date = tanggal_terbit + timedelta(days=365 * years)
                 masa_berlaku[f"case_{match.start()}"] = expiration_date.strftime("%d-%m-%Y")
             
             # Extract 'penerbit'
-            penerbit_match = re.search(patterns["penerbit"], text)
+            penerbit_match = re.search(patterns["penerbit"], all_text)
             penerbit = penerbit_match.group(0).strip() if penerbit_match else "N/A"
 
             # Extract 'doc_number'
-            doc_number_match = re.search(patterns["doc_number"], text)
+            doc_number_match = re.search(patterns["doc_number"], all_text)
             doc_number = doc_number_match.group(0).strip() if doc_number_match else "N/A"
 
             # Custom output for 'legalitas' document type
@@ -178,28 +193,28 @@ def your_endpoint():
             tanggal_terbit = None
 
             # Extract tanggal terbit
-            terbit_match = re.search(patterns["terbit_date"], text)
+            terbit_match = re.search(patterns["terbit_date"], all_text)
             if terbit_match:
                 day, month_name, year = terbit_match.groups()
                 tanggal_terbit = parse_date(day, month_name, year)
                 masa_berlaku["tanggal_terbit"] = tanggal_terbit.strftime("%d-%m-%Y")
 
             # Extract validity dates
-            for match in re.finditer(patterns["validity_date"], text):
+            for match in re.finditer(patterns["validity_date"], all_text):
                 day, month_name, year = match.groups()
                 formatted_date = parse_date(day, month_name, year).strftime("%d-%m-%Y")
                 masa_berlaku[f"case_{match.start()}"] = formatted_date
 
             # Extract validity years and calculate expiration dates
-            for match in re.finditer(patterns["validity_years"], text):
+            for match in re.finditer(patterns["validity_years"], all_text):
                 years = int(match.group(1))
                 expiration_date = tanggal_terbit + timedelta(days=365 * years)
                 masa_berlaku[f"case_{match.start()}"] = expiration_date.strftime("%d-%m-%Y")
 
             # Extract additional fields
-            nama = re.search(patterns["nama"], text).group(1).strip() if re.search(patterns["nama"], text) else None
-            cert_number = re.search(patterns["certificate_number"], text).group(1).strip() if re.search(patterns["certificate_number"], text) else None
-            competency = re.search(patterns["competency"], text).group(1).strip() if re.search(patterns["competency"], text) else None
+            nama = re.search(patterns["nama"], all_text).group(1).strip() if re.search(patterns["nama"], all_text) else None
+            cert_number = re.search(patterns["certificate_number"], all_text).group(1).strip() if re.search(patterns["certificate_number"], all_text) else None
+            competency = re.search(patterns["competency"], all_text).group(1).strip() if re.search(patterns["competency"], all_text) else None
 
             # Prepare output
             output = {
@@ -238,15 +253,15 @@ def your_endpoint():
                 return datetime.strptime(date_str, "%B %Y") if date_str != "Present" else datetime.now()
 
             # Extract personal details
-            nama = re.search(patterns["nama"], text).group(1)
-            ttl = re.search(patterns["ttl"], text).group(1)
-            education = re.search(patterns["education"], text)
+            nama = re.search(patterns["nama"], all_text).group(1)
+            ttl = re.search(patterns["ttl"], all_text).group(1)
+            education = re.search(patterns["education"], all_text)
             univ, gelar, lulus = education.groups()
 
             # Parse experience entries
             experiences = []
-            for date_range, role, project in re.findall(patterns["experience"], text):
-                company_name = re.search(r"(.*)\n" + re.escape(date_range), text).group(1).strip()
+            for date_range, role, project in re.findall(patterns["experience"], all_text):
+                company_name = re.search(r"(.*)\n" + re.escape(date_range), all_text).group(1).strip()
                 start_date, end_date = map(parse_date, date_range.split(" - "))
                 duration = (end_date - start_date).days / 365.25
 
@@ -303,13 +318,38 @@ def your_endpoint():
 
         case ('pengurus'|"pemegang_saham", _):
             # Pattern Pengurus dan Pemegang saham
-            masa_berlaku["case_g"] = "Logika untuk doc_type g"
+            pattern = {
+                "nama": r"NPWP\s*:\s*\d{2}\.\d{3}\.\d{3}\.\d-\d{3}\.\d{3}\s*\n(.+)",
+                "npwp": r"NPWP\s*:\s*(\d{2}\.\d{3}\.\d{3}\.\d-\d{3}\.\d{3})",
+                "nik": r"NIK\s*:\s*(\d{16})",
+                "kota": r"PROVINSI.*\n\n(.*)",
+                "alamat": r"Alamat :.*?Kecamatan =.*",
+            }
+            
+            nama = re.search(pattern["nama"], all_text).group(1) if re.search(pattern["nama"], all_text) else None
+            npwp = re.search(pattern["npwp"], all_text).group(1) if re.search(pattern["npwp"], all_text) else None
+            nik = re.search(pattern["nik"], all_text).group(1) if re.search(pattern["nik"], all_text) else None
+            kota_match = re.search(pattern["kota"], all_text)
+            kota = kota_match.group(1).strip() if kota_match else None
+
+            # Ekstraksi bagian "Alamat" hingga "Kecamatan"
+            alamat_match = re.search(pattern["alamat"], all_text, re.DOTALL)
+            if alamat_match:
+                section = alamat_match.group(0)  # Bagian yang ditemukan
+                # Ekstraksi teks setelah ":" atau "="
+                alamat_values = re.findall(r"[:=]\s*(.+)", section)
+                alamat = ", ".join(alamat_values)
+            else:
+                alamat = None
 
             app.logger.warning("Unknown doc_type or sub_doc_type. No matching pattern.")
             output = {
                 "error": "Unknown document type",
-                "doc_type": doc_type,
-                "sub_doc_type": sub_doc_type
+                "nama": nama,
+                "npwp": npwp,
+                "nik": nik,
+                "alamat": f"{alamat}, {kota}"
+
             }
             return jsonify(output)
 
