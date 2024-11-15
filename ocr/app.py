@@ -295,7 +295,8 @@ def your_endpoint():
         case ('keuangan', _):
             # Pattern Keuangan
             pattern = {"tanggal": r"Printed\s*On\s*:\s*(\d{2}-\w{3}-\d{4})|Tanggal\s*Penyampaian\s*:\s*(\d{2}/\d{2}/\d{4})|(\w+\s*\d{1,2},\s*\d{4})|Tanggal\s*:\s*(\d{2}\s*\w+\s*\d{4})",
-                       "periode": r"FROM\s*:\s*(\d{4})|Tahun\s*Pajak\s*:\s*(\d{4})|yang\s*Berakhir\s*pada\s*.*?(\d{4})|sampai\s*dengan\s*tanggal\s*(\d{4})"
+                       "periode": r"FROM\s*:\s*(\d{4})|Tahun\s*Pajak\s*:\s*(\d{4})|yang\s*Berakhir\s*pada\s*.*?(\d{4})|sampai\s*dengan\s*tanggal\s*(\d{4})",
+                       "nomor": r"(?<=Nomor/Number\s?:)\s?([^\s]+)|(?<=Nomor\s*Tanda\s*Terima\s*Elektronik\s?:)\s?([^\s]+)|(?<=Nomor\s?:)\s?([^\s]+)"
             }
             
             # Fungsi untuk memproses tanggal
@@ -312,10 +313,10 @@ def your_endpoint():
                                 return datetime.strptime(group, "%d/%m/%Y").strftime("%d-%m-%Y")
                             elif i == 2:  # Case 3: Month dd, yyyy
                                 month, day, year = re.match(r"(\w+)\s*(\d{1,2}),\s*(\d{4})", group).groups()
-                                return f"{int(day):02d}-{month_map[month]}-{year}"
+                                return f"{int(day):02d}-{month_mapping[month]}-{year}"
                             elif i == 3:  # Case 4: dd Month yyyy
                                 day, month, year = re.match(r"(\d{2})\s*(\w+)\s*(\d{4})", group).groups()
-                                return f"{day}-{month_map[month]}-{year}"
+                                return f"{day}-{month_mapping[month]}-{year}"
                 except Exception as e:
                     raise ValueError(f"Error processing date: {group}, {str(e)}")
 
@@ -338,22 +339,26 @@ def your_endpoint():
             try:
                 tanggal_matches = re.findall(pattern["tanggal"], text)
                 periode_matches = re.findall(pattern["periode"], text)
+                nomor_matches = re.findall(pattern[nomor], text)
 
                 # Proses data
                 tanggal = [process_date(match) for match in tanggal_matches if any(match)]
                 tahun = process_year(periode_matches)
+                nomor = [match[0] or match[1] or match[2] for match in nomor_matches]
 
                 # Output JSON
                 output = {
                     "error": None,
                     "tanggal": tanggal,
-                    "tahun": tahun
+                    "tahun": tahun,
+                    "nomor": nomor
                 }
             except Exception as e:
                 output = {
                     "error": str(e),
                     "tanggal": [],
-                    "tahun": []
+                    "tahun": [],
+                    "nomor": []
                 }
             return jsonify(output)
 
