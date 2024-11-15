@@ -156,7 +156,7 @@ def your_endpoint():
             output = {
                 "document_type": "legalitas",
                 "penerbit": penerbit,
-                "masa_berlaku": masa_berlaku,
+                "masa_berlaku": masa_berlaku.get("tanggal_terbit"),
                 "doc_number":doc_number
             }
             return jsonify(output)
@@ -276,7 +276,6 @@ def your_endpoint():
                 }
 
             return jsonify(output)
-
 
 
         case ('keuangan', _):
