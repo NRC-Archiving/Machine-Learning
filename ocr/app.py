@@ -180,8 +180,8 @@ def your_endpoint():
             
             # Pattern Tenaga Ahli
             patterns = {
-                "terbit_date": r"\b(?:[Dd]iterbitkan pertama tanggal|[Dd]iberikan pertama kali pada|[Tt]anggal:|[Dd]itetapkan di \w+,?)\s*(\d{1,2})\s(\w+)\s(\d{4})",
-                "validity_date": r"sampai(?: dengan tanggal)? (\d{1,2})\s([A-Za-z]+)\s(\d{4})",
+                "terbit_date": r"\b(?:[Dd]iterbitkan\s*pertama\s*tanggal|[Dd]iberikan\s*pertama\s*kali\s*pada|[Tt]anggal\s*:\s*|[Dd]itetapkan\s*di\s*\w+,?)\s*(\d{1,2})\s(\w+)\s(\d{4})",
+                "validity_date": r"sampai(?:\s*dengan\s*tanggal)? (\d{1,2})\s([A-Za-z]+)\s(\d{4})",
                 "validity_years": r"berlaku (?:untuk|paling lama) (\d+)",
                 "nama": r"(?<=This is to certify that,\n)(.*)",
                 "certificate_number": r"No\. Reg\.\s([A-Za-z0-9\s]+)(?=\n)",
@@ -244,7 +244,7 @@ def your_endpoint():
             patterns = {
                 "experience": r"(\b\w+\s\d{4}\s-\s(?:\w+\s\d{4}|Present))\s*:\s*(.*)\n([\s\S]+?)(?=\n\n|\Z)",
                 "nama": r"Nama\s*:\s*(.*)",
-                "ttl": r"Tempat & Tgl\. Lahir\s*:\s*(.*)",
+                "ttl": r"Tempat\s*&\s*Tgl\.\s*Lahir\s*:\s*(.*)",
                 "education": r"Pendidikan\s*:\s*(.*?)\s(.*?)\s*-\s*(\d{4})"
             }
 
@@ -294,14 +294,67 @@ def your_endpoint():
 
         case ('keuangan', _):
             # Pattern Keuangan
-            masa_berlaku["case_e"] = "Logika untuk doc_type e"
-
-            app.logger.warning("Unknown doc_type or sub_doc_type. No matching pattern.")
-            output = {
-                "error": "Unknown document type",
-                "doc_type": doc_type,
-                "sub_doc_type": sub_doc_type
+            pattern = {"tanggal": r"Printed\s*On\s*:\s*(\d{2}-\w{3}-\d{4})|Tanggal\s*Penyampaian\s*:\s*(\d{2}/\d{2}/\d{4})|(\w+\s*\d{1,2},\s*\d{4})|Tanggal\s*:\s*(\d{2}\s*\w+\s*\d{4})",
+                       "periode": r"FROM\s*:\s*(\d{4})|Tahun\s*Pajak\s*:\s*(\d{4})|yang\s*Berakhir\s*pada\s*.*?(\d{4})|sampai\s*dengan\s*tanggal\s*(\d{4})"
             }
+            
+            # Fungsi untuk memproses tanggal
+            def process_date(match):
+                if not any(match):  # Jika semua grup kosong, return None
+                    return None
+                
+                try:
+                    for i, group in enumerate(match):
+                        if group:
+                            if i == 0:  # Case 1: Format %d-%b-%Y
+                                return datetime.strptime(group, "%d-%b-%Y").strftime("%d-%m-%Y")
+                            elif i == 1:  # Case 2: Format %d/%m/%Y
+                                return datetime.strptime(group, "%d/%m/%Y").strftime("%d-%m-%Y")
+                            elif i == 2:  # Case 3: Month dd, yyyy
+                                month, day, year = re.match(r"(\w+)\s*(\d{1,2}),\s*(\d{4})", group).groups()
+                                return f"{int(day):02d}-{month_map[month]}-{year}"
+                            elif i == 3:  # Case 4: dd Month yyyy
+                                day, month, year = re.match(r"(\d{2})\s*(\w+)\s*(\d{4})", group).groups()
+                                return f"{day}-{month_map[month]}-{year}"
+                except Exception as e:
+                    raise ValueError(f"Error processing date: {group}, {str(e)}")
+
+            # Fungsi untuk memproses tahun
+            def process_year(matches):
+                try:
+                    years = []
+                    for idx, match in enumerate(matches):
+                        extracted = [int(year) for year in match if year]
+                        if idx == 2:  # Case 3: yang Berakhir pada ...
+                            if extracted:
+                                years.append(max(extracted))  # Ambil nilai maksimum
+                        else:
+                            years.extend(extracted)
+                    return years
+                except Exception as e:
+                    raise ValueError(f"Error processing year: {str(e)}")
+
+            # Ekstraksi
+            try:
+                tanggal_matches = re.findall(pattern["tanggal"], text)
+                periode_matches = re.findall(pattern["periode"], text)
+
+                # Proses data
+                tanggal = [process_date(match) for match in tanggal_matches if any(match)]
+                tahun = process_year(periode_matches)
+
+                # Output JSON
+                output = {
+                    "error": None,
+                    "tanggal": tanggal,
+                    "tahun": tahun
+                }
+            except Exception as e:
+                output = {
+                    "error": str(e),
+                    "tanggal": [],
+                    "tahun": []
+                }
             return jsonify(output)
 
         case ('proyek', _):
