@@ -112,7 +112,7 @@ def your_endpoint():
     match (doc_type, sub_doc_type):
 
         case ('legalitas', _):
-            # Placeholder untuk kasus 'c'
+            # Pattern Legalitas
             patterns = {
                 "terbit_date":r"(?:di\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s*,\s*tanggal:\s*(\d{1,2}\s+[A-Za-z]+\s+\d{4}))|(?:[Dd]iterbitkan pertama tanggal|[Dd]iberikan pertama kali pada|[Tt]anggal:|[Dd]itetapkan di \w+,?)\s*(\d{1,2})\s(\w+)\s(\d{4})",
                 "validity_date": r"sampai(?: dengan tanggal)? (\d{1,2})\s([A-Za-z]+)\s(\d{4})",
@@ -163,7 +163,7 @@ def your_endpoint():
         
         case ('tenaga_ahli', _):
             
-            # Define patterns for parsing
+            # Pattern Tenaga Ahli
             patterns = {
                 "terbit_date": r"\b(?:[Dd]iterbitkan pertama tanggal|[Dd]iberikan pertama kali pada|[Tt]anggal:|[Dd]itetapkan di \w+,?)\s*(\d{1,2})\s(\w+)\s(\d{4})",
                 "validity_date": r"sampai(?: dengan tanggal)? (\d{1,2})\s([A-Za-z]+)\s(\d{4})",
@@ -225,8 +225,7 @@ def your_endpoint():
             return jsonify(output)
 
         case ('cv', _):
-            # Placeholder untuk kasus 'd'
-            # Define patterns for parsing
+            # Pattern CV
             patterns = {
                 "experience": r"(\b\w+\s\d{4}\s-\s(?:\w+\s\d{4}|Present))\s*:\s*(.*)\n([\s\S]+?)(?=\n\n|\Z)",
                 "nama": r"Nama\s*:\s*(.*)",
@@ -279,7 +278,7 @@ def your_endpoint():
 
 
         case ('keuangan', _):
-            # Placeholder untuk kasus 'e'
+            # Pattern Keuangan
             masa_berlaku["case_e"] = "Logika untuk doc_type e"
 
             app.logger.warning("Unknown doc_type or sub_doc_type. No matching pattern.")
@@ -291,7 +290,7 @@ def your_endpoint():
             return jsonify(output)
 
         case ('proyek', _):
-            # Placeholder untuk kasus 'f'
+            # Pattern Proyek
             masa_berlaku["case_f"] = "Logika untuk doc_type f"
 
             app.logger.warning("Unknown doc_type or sub_doc_type. No matching pattern.")
@@ -303,7 +302,7 @@ def your_endpoint():
             return jsonify(output)
 
         case ('pengurus'|"pemegang_saham", _):
-            # Placeholder untuk kasus 'g'
+            # Pattern Pengurus dan Pemegang saham
             masa_berlaku["case_g"] = "Logika untuk doc_type g"
 
             app.logger.warning("Unknown doc_type or sub_doc_type. No matching pattern.")
@@ -315,7 +314,7 @@ def your_endpoint():
             return jsonify(output)
 
         case ('peralatan', _):
-            # Placeholder untuk kasus 'h'
+            # Pattern Peralatan
             masa_berlaku["case_h"] = "Logika untuk doc_type h"
 
             app.logger.warning("Unknown doc_type or sub_doc_type. No matching pattern.")
@@ -327,7 +326,7 @@ def your_endpoint():
             return jsonify(output)
 
         case ('lain_lain', _):
-            # Placeholder untuk kasus 'i'
+            # Pattern Dokumen Lain-lain
             masa_berlaku["case_i"] = "Logika untuk doc_type i"
 
             app.logger.warning("Unknown doc_type or sub_doc_type. No matching pattern.")
@@ -339,7 +338,7 @@ def your_endpoint():
             return jsonify(output)
 
         case ('surat_masuk', _):
-            # Placeholder untuk kasus 'j'
+            # Patern Surat Masuk
             masa_berlaku["case_j"] = "Logika untuk doc_type j"
 
             app.logger.warning("Unknown doc_type or sub_doc_type. No matching pattern.")
@@ -351,7 +350,7 @@ def your_endpoint():
             return jsonify(output)
 
         case ('surat_keluar', _):
-            # Placeholder untuk kasus 'j'
+            # Pattern Surat Keluar
             masa_berlaku["case_j"] = "Logika untuk doc_type j"
 
             app.logger.warning("Unknown doc_type or sub_doc_type. No matching pattern.")
@@ -363,7 +362,7 @@ def your_endpoint():
             return jsonify(output)
 
         case ('sertifikat', _):
-            # Placeholder untuk kasus 'j'
+            # Pattern Sertifikat Tanah
             masa_berlaku["case_j"] = "Logika untuk doc_type j"
 
             app.logger.warning("Unknown doc_type or sub_doc_type. No matching pattern.")
@@ -375,7 +374,7 @@ def your_endpoint():
             return jsonify(output)
 
         case ('ppjb', _):
-            # Placeholder untuk kasus 'j'
+            # Pattern PPJB
             masa_berlaku["case_j"] = "Logika untuk doc_type j"
 
             app.logger.warning("Unknown doc_type or sub_doc_type. No matching pattern.")
@@ -386,6 +385,7 @@ def your_endpoint():
             }
             return jsonify(output)    
 
+        # Case diluar jenis dokumen yanga ada
         case _:
             app.logger.warning("Unknown doc_type or sub_doc_type. No matching pattern.")
             output = {
