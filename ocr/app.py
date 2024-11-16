@@ -133,7 +133,7 @@ def your_endpoint():
                 "validity_date": r"sampai(?: dengan tanggal)? (\d{1,2})\s([A-Za-z]+)\s(\d{4})",
                 "validity_years": r"berlaku (?:untuk|paling lama) (\d+)",
                 "penerbit": r"(?:\b[a-z]+(?:\s+[a-z]+)+\b\s+)([A-Z][^:]+)(?=\s*menetapkan\s+bahwa)|(?<=ditetapkan\s+oleh\s*:\s*)([A-Z][^:]+)|(?<=diterbitkan\s+sistem\s+)(\S+)(?=\s+berdasarkan)|(?<=^|\n)([A-Z][^:]+)(?=\s*menetapkan\s+bahwa)",
-                "doc_number": r"No\. Reg\.\s([A-Za-z0-9\s]+)(?=\n)|(?<=Nomor:\s*)(\d+)|(?<=Nomor:\n)(\d+)|(?<=Certificate No\.\s)([A-Za-z0-9\.\s]+?)(?=\n|$)|(?<=NOMOR INDUK BERUSAHA\s*:\s*)([A-Za-z0-9]+)(?=\n|$)",
+                "doc_number": r"No\.\s*Reg\.\s([A-Za-z0-9\s]+)(?=\n)|(?<=Nomor:\s*)(\d+)|(?<=Nomor:\n)(\d+)|(?<=Certificate No\.\s)([A-Za-z0-9\.\s]+?)(?=\n|$)|(?<=NOMOR INDUK BERUSAHA\s*:\s*)([A-Za-z0-9]+)(?=\n|$)",
             }
             
             # Extracting information using patterns
@@ -182,9 +182,9 @@ def your_endpoint():
             patterns = {
                 "terbit_date": r"\b(?:[Dd]iterbitkan\s*pertama\s*tanggal|[Dd]iberikan\s*pertama\s*kali\s*pada|[Tt]anggal\s*:\s*|[Dd]itetapkan\s*di\s*\w+,?)\s*(\d{1,2})\s(\w+)\s(\d{4})",
                 "validity_date": r"sampai(?:\s*dengan\s*tanggal)? (\d{1,2})\s([A-Za-z]+)\s(\d{4})",
-                "validity_years": r"berlaku (?:untuk|paling lama) (\d+)",
-                "nama": r"(?<=This is to certify that,\n)(.*)",
-                "certificate_number": r"No\. Reg\.\s([A-Za-z0-9\s]+)(?=\n)",
+                "validity_years": r"berlaku\s*(?:untuk|paling\s*lama) (\d+)",
+                "nama": r"(?<=This\s*is\s*to\s*certify\s*that,\n)(.*)",
+                "certificate_number": r"No\.\s*Reg\.\s*([A-Za-z0-9\s]+)(?=\n)",
                 "competency": r"(?<=Competency:\n)(.*)"
             }
 
@@ -228,8 +228,12 @@ def your_endpoint():
             return jsonify(output)
 
         case ('kontrak', _):
-            # Placeholder untuk kasus 'b'
-            masa_berlaku["case_b"] = "Logika untuk doc_type b"
+            pattern = {
+                "tanggal": r"",
+                "nomor_kontrak": r"No[.]\s*[:]\s*([^\s]+)",
+                "nama_proyek": r"",
+                "pemberi_kerja": r""
+            }
 
             output = {
                 "document_type": "kontrak",
