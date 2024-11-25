@@ -231,7 +231,7 @@ def your_endpoint():
             pattern = {
                 "tanggal": r"",
                 "nomor_kontrak": r"No[.]\s*[:]\s*([^\s]+)",
-                "nama_proyek": r"",
+                "nama_proyek": r"Perihal\s*:\s*",
                 "pemberi_kerja": r""
             }
 
@@ -341,9 +341,9 @@ def your_endpoint():
 
             # Ekstraksi
             try:
-                tanggal_matches = re.findall(pattern["tanggal"], text)
-                periode_matches = re.findall(pattern["periode"], text)
-                nomor_matches = re.findall(pattern[nomor], text)
+                tanggal_matches = re.findall(pattern["tanggal"], all_text)
+                periode_matches = re.findall(pattern["periode"], all_text)
+                nomor_matches = re.findall(pattern[nomor], all_text)
 
                 # Proses data
                 tanggal = [process_date(match) for match in tanggal_matches if any(match)]
@@ -441,14 +441,36 @@ def your_endpoint():
 
         case ('surat_masuk', _):
             # Patern Surat Masuk
-            masa_berlaku["case_j"] = "Logika untuk doc_type j"
-
-            app.logger.warning("Unknown doc_type or sub_doc_type. No matching pattern.")
-            output = {
-                "error": "Unknown document type",
-                "doc_type": doc_type,
-                "sub_doc_type": sub_doc_type
+            pattern = {
+                tanggal : r"(\b(?:\w+\s+){0,2}\w{1,2}\s\w+\s\d{4})",
+                nomor : r"^No[.]\s*:\s*([^\s]+)|^Nomor[.]\s*:\s*([^\s]+)",
+                pengirim : r"(?i)hormat kami,\s*([^\t\n]+)",
+                perihal : r"Hal[.]\s*:\s*([^\s]+)|Perihal[.]\s*:([^\s]+)"
             }
+
+            tanggal_match = re.search(pattern["tanggal"], all_text)
+            nomor_match = re.search(pattern["nomor"], all_text)
+            pengirim_match = re.search(pattern["pengirim"], all_text)
+            perihal_match = re.search(pattern["perihal"], all_text)
+
+            # Parsing hasil ekstraksi
+            tanggal = parse_date(tanggal_match.group(1).strip()) if tanggal_match else None
+            nomor = (nomor_match.group(1) or nomor_match.group(2)).strip() if nomor_match else None
+            pengirim = pengirim_match.group(1).strip() if pengirim_match else None
+            perihal = (perihal_match.group(1) or perihal_match.group(2)).strip() if perihal_match else None
+
+            # Jika tidak ada data yang ditemukan
+            if not any([tanggal, nomor, pengirim, perihal]):
+                app.logger.warning("Unknown doc_type or sub_doc_type. No matching pattern.")
+                output = {"error": "Unknown document type"}
+            else:
+                output = {
+                    "error": "Unknown document type",
+                    "tanggal": tanggal,
+                    "nomor": nomor,
+                    "pengirim": pengirim,
+                    "perihal": perihal
+                }
             return jsonify(output)
 
         case ('surat_keluar', _):
