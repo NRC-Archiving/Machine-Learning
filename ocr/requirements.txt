@@ -1,6 +1,6 @@
-Flask
-pytesseract
-opencv-python
-tesseract-ocr
+flask
 pdf2image
-poppler-utils
+pytesseract
+pillow
+opencv-python
+werkzeug
