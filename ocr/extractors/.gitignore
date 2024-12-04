@@ -1,2 +1,14 @@
-# Ignore all files in the tests/test_files/ directory
+# Ignore Python bytecode files
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore virtual environment directories
+venv/
+env/
+
+# Ignore all files in the test_files directory
 tests/test_files/*
+
+# Allow a placeholder file to keep the directory structure
+!tests/test_files/.gitkeep
