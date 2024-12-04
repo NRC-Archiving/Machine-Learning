@@ -1,13 +1,13 @@
 import os
 import unittest
-from app import app  # Import the Flask app from your app.py
+from app import app
 
 class TestAppIntegration(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """Set up the test client and test data."""
         cls.client = app.test_client()  # Flask test client
-        cls.test_files_dir = "tests/test_files/"  # Directory for test PDFs
+        cls.test_files_dir = "test/test_files/"  # Directory for test PDFs
         cls.test_cases = [
             {
                 "file": "cv_sample.pdf",
@@ -15,12 +15,12 @@ class TestAppIntegration(unittest.TestCase):
                 "expected_keys": ["nama", "education", "experiences", "total_years_of_experience"]
             },
             {
-                "file": "financial_sample.pdf",
+                "file": "keuangan_sample.pdf",
                 "doc_type": "keuangan",
                 "expected_keys": ["tanggal", "tahun_pajak", "nomor"]
             },
             {
-                "file": "legal_sample.pdf",
+                "file": "legalitas_sample.pdf",
                 "doc_type": "legalitas",
                 "expected_keys": ["tanggal_terbit", "masa_berlaku", "penerbit", "nomor_dokumen"]
             }
