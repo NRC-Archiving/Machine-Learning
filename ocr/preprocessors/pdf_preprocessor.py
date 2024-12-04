@@ -1,74 +1,76 @@
 import os
 import cv2
-from tempfile import TemporaryDirectory
+import numpy as np
 from pdf2image import convert_from_path
 from pytesseract import image_to_string
 from PIL import Image
 from concurrent.futures import ThreadPoolExecutor
+import asyncio
 
-def preprocess_image(image_path, method="trunc"):
+def preprocess_image(image, method="trunc"):
     try:
-        # Load the image and convert to grayscale
-        image = cv2.imread(image_path)
+        if isinstance(image, str):  # If the input is a file path
+            image = cv2.imread(image)
+        else:  # If the input is a PIL image
+            image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+
+        # Convert to grayscale
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
         # Apply preprocessing based on the method
         if method == "trunc":
             gray = cv2.threshold(gray, 127, 255, cv2.THRESH_TRUNC)[1]
 
-        # Encode the image in memory
-        _, buffer = cv2.imencode(".png", gray)
-        temp_image = Image.open(buffer)
+        return gray
+    except Exception as e:
+        raise ValueError(f"Error during image preprocessing: {e}")
 
-        # Extract text using OCR
-        text = image_to_string(temp_image)
+def ocr_image(image):
+    try:
+        # Convert OpenCV image to PIL format for OCR
+        pil_image = Image.fromarray(image)
+        text = image_to_string(pil_image)
         return text.strip()
     except Exception as e:
-        raise ValueError(f"Error during preprocessing: {str(e)}")
+        raise ValueError(f"Error during OCR: {e}")
 
-def convert_pdf_to_images(pdf_path, dpi=300, temp_dir=None):
+def convert_pdf_to_images(pdf_path, dpi=300):
+    try:
+        return convert_from_path(pdf_path, dpi=dpi)
+    except Exception as e:
+        raise ValueError(f"Error converting PDF to images: {e}")
+
+async def process_page_async(image, page_num, preprocessing_method="trunc"):
+    try:
+        processed_image = preprocess_image(image, preprocessing_method)
+        text = ocr_image(processed_image)
+        return f"--- Page {page_num + 1} ---\n{text}"
+    except Exception as e:
+        return f"--- Page {page_num + 1} ---\n[ERROR] {str(e)}"
+
+async def extract_text_from_pdf_async(pdf_path, dpi=300, preprocessing_method="trunc"):
     try:
         # Convert PDF to images
-        images = convert_from_path(pdf_path, dpi=dpi, output_folder=temp_dir)
-        image_paths = []
-        for i, image in enumerate(images):
-            image_path = os.path.join(temp_dir, f"page_{i + 1}.png")
-            image.save(image_path)
-            image_paths.append(image_path)
-        return image_paths
+        images = convert_pdf_to_images(pdf_path, dpi)
+
+        # Select specific pages: first 7 and last 7 if more than 15
+        total_pages = len(images)
+        if total_pages > 15:
+            images = images[:7] + images[-7:]
+
+        # Process images concurrently
+        tasks = [
+            process_page_async(image, i, preprocessing_method)
+            for i, image in enumerate(images)
+        ]
+        results = await asyncio.gather(*tasks)
+        return "\n\n".join(results).strip()
     except Exception as e:
-        raise ValueError(f"Error converting PDF to images: {str(e)}")
+        raise ValueError(f"Error extracting text from PDF: {e}")
 
 def extract_text_from_pdf(pdf_path, dpi=300, preprocessing_method="trunc"):
     try:
-        with TemporaryDirectory() as temp_dir:
-            # Convert PDF to images
-            image_paths = convert_pdf_to_images(pdf_path, dpi, temp_dir)
-
-            # Select specific pages: first 7 and last 7 if more than 15
-            total_pages = len(image_paths)
-            if total_pages > 15:
-                selected_pages = image_paths[:7] + image_paths[-7:]
-            else:
-                selected_pages = image_paths
-
-            extracted_text = []
-
-            # Process images in parallel
-            def process_page(image_path, page_num):
-                text = preprocess_image(image_path, preprocessing_method)
-                return f"--- Page {page_num + 1} ---\n{text}"
-
-            with ThreadPoolExecutor() as executor:
-                results = executor.map(
-                    process_page,
-                    selected_pages,
-                    range(len(selected_pages))
-                )
-
-            # Collect results
-            extracted_text.extend(results)
-
-            return "\n\n".join(extracted_text).strip()
+        # Use asyncio to process images asynchronously
+        return asyncio.run(extract_text_from_pdf_async(pdf_path, dpi, preprocessing_method))
     except Exception as e:
-        raise ValueError(f"Error extracting text from PDF: {str(e)}")
+        raise ValueError(f"Error in synchronous extraction: {e}")
