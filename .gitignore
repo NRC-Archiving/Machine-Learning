@@ -12,3 +12,4 @@ tests/test_files/*
 
 # Allow a placeholder file to keep the directory structure
 !tests/test_files/.gitkeep
+/ocr/test/test_files
