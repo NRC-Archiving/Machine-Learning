@@ -12,7 +12,7 @@ from extractors import (
     extract_pengurus
 )
 
-# Inisialisasi Flask
+# Initialize Flask
 app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -35,9 +35,10 @@ def extract_document():
     file.save(file_path)
 
     try:
-        # Extract text from PDF with `trunc` preprocessing
+        # Extract text from the PDF using the preprocessor
         text = extract_text_from_pdf(file_path)
 
+        # Dictionary mapping document types to their respective extractors
         extractors = {
             "legalitas": extract_legalitas,
             "tenaga_ahli": extract_tenaga_ahli,
@@ -49,15 +50,17 @@ def extract_document():
             "pemegang_saham": extract_pengurus
         }
 
+        # Use the appropriate extractor for the document type
         if doc_type in extractors:
             result = extractors[doc_type](text)
         else:
             result = {"error": f"Unknown document type: {doc_type}"}
 
     except Exception as e:
-        result = {"error": str(e)}
+        result = {"error": f"An error occurred: {str(e)}"}
 
     finally:
+        # Cleanup the uploaded file
         if os.path.exists(file_path):
             os.remove(file_path)
 
