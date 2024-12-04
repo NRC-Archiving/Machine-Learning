@@ -24,9 +24,6 @@ def allowed_file(filename):
 
 @app.route('/extract', methods=['POST'])
 def extract_document():
-    """
-    Extract text from a document and process it based on the document type.
-    """
     doc_type = request.form.get('doc_type', 'unknown')
     file = request.files.get('file')
 
