@@ -1,0 +1,2 @@
+# Ignore all files in the tests/test_files/ directory
+tests/test_files/*
