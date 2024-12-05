@@ -8,7 +8,7 @@ def extract_legalitas(text):
     patterns = {
         "tanggal_terbit": r"\b[Tt]anggal\s*:\s*(\d{1,2})\s+(\w+)\s+(\d{4})",
         "masa_berlaku": r"(?:sampai\s+dengan\s+tanggal\s*(\d{1,2})\s+(\w+)\s+(\d{4}))|(?:Masa\s+Berlaku\s+s\.d\.\s*:\s*(\d{4}-\d{2}-\d{2}))",
-        "penerbit": r"(?<=diterbitkan oleh\s*:\s*)([A-Z][^:]+)",
+        "penerbit": r"diterbitkan oleh\s*:\s*([A-Z][^:]+)",
         "nomor_dokumen": r"Nomor\s*:\s*([A-Za-z0-9\-]+)|PB-UMKU\s*:\s*([A-Za-z0-9\-]+)"
     }
 
