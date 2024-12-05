@@ -17,15 +17,15 @@ def extract_legalitas(text):
         # Ekstraksi tanggal terbit
         terbit_match = re.search(patterns["tanggal_terbit"], text)
         if terbit_match:
+            day, month_name, year = masa_match.groups()
             date_str = f"{day} {month_name} {year}"
-            day, month_name, year = terbit_match.groups()
             hasil["tanggal_terbit"] = parse_date(date_str).strftime("%d-%m-%Y")
 
         # Ekstraksi masa berlaku
         masa_match = re.search(patterns["masa_berlaku"], text)
         if masa_match:
-            date_str = f"{day} {month_name} {year}"
             day, month_name, year = masa_match.groups()
+            date_str = f"{day} {month_name} {year}"
             hasil["masa_berlaku"] = parse_date(date_str).strftime("%d-%m-%Y")
 
         # Ekstraksi lainnya
