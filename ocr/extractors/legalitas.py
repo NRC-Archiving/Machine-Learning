@@ -9,7 +9,7 @@ def extract_legalitas(text):
         "tanggal_terbit": r"\b[Tt]anggal\s*:\s*(\d{1,2})\s+(\w+)\s+(\d{4})",
         "masa_berlaku": r"(?:sampai\s+dengan\s+tanggal\s*(\d{1,2})\s+(\w+)\s+(\d{4}))|(?:Masa\s+Berlaku\s+s\.d\.\s*:\s*(\d{4}-\d{2}-\d{2}))",
         "penerbit": r"diterbitkan oleh\s*:\s*([A-Z][^:]+)",
-        "nomor_dokumen": r"Nomor\s*:\s*([A-Za-z0-9\-]+)|PB-UMKU\s*:\s*([A-Za-z0-9\-]+)"
+        "nomor_dokumen": r"(?:Nomor\s*:\s*([A-Za-z0-9\-]+))|(?:PB-UMKU:\s*([A-Za-z0-9]+))"
     }
 
     hasil = {}
@@ -42,9 +42,11 @@ def extract_legalitas(text):
         )
 
         nomor_dokumen_match = re.search(patterns["nomor_dokumen"], text)
-        hasil["nomor_dokumen"] = (
-            nomor_dokumen_match.group(1) if nomor_dokumen_match else "N/A"
-        )
+        if nomor_dokumen_match:
+            hasil["nomor_dokumen"] = nomor_dokumen_match.group(1) or nomor_dokumen_match.group(2)
+        else:
+            hasil["nomor_dokumen"] = "N/A"
+
     except Exception as e:
         hasil["error"] = f"Error processing legalitas: {str(e)}"
     return hasil
