@@ -26,9 +26,12 @@ def extract_legalitas(text):
         # Ekstraksi masa berlaku
         masa_match = re.search(patterns["masa_berlaku"], text)
         if masa_match:
-            day, month_name, year = masa_match.groups()
-            date_str = f"{day} {month_name} {year}"
-            hasil["masa_berlaku"] = parse_date(date_str).strftime("%d-%m-%Y")
+            if masa_match.group(1):  # Original format
+                day, month_name, year = masa_match.groups()[:3]
+                date_str = f"{day} {month_name} {year}"
+                hasil["masa_berlaku"] = parse_date(date_str).strftime("%d-%m-%Y")
+            elif masa_match.group(4):  # New format
+                hasil["masa_berlaku"] = masa_match.group(4)
         else:
             hasil["masa_berlaku"] = "N/A"
 
