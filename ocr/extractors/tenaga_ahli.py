@@ -9,7 +9,7 @@ def extract_tenaga_ahli(text):
         "terbit_date": r"(?i)\b(?:Diterbitkan(?: pertama tanggal)?|Diberikan pertama kali pada|tanggal:?|Ditetapkan(?: di \w+)?)[,:\s]*(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})",
         "validity_date": r"sampai(?: dengan tanggal)? (\d{1,2})\s([A-Za-z]+)\s(\d{4})",
         "validity_years": r"berlaku (?:untuk|paling lama) (\d+)",
-        "nama": r"(?<=This is to certify that,\n)(.*)",
+        "nama": r"This is to certify that,\s*([^\n]+)",
         "certificate_number": r"No\. Reg\.\s([A-Z]\s\d{4}\s\d{5}\s\d{4}\s\d{7}\s[A-Z]{2}\s\d{2})",
         "competency": r"Competency:\s*([^\n]+)"
     }
