@@ -10,8 +10,8 @@ def extract_tenaga_ahli(text):
         "validity_date": r"sampai(?: dengan tanggal)? (\d{1,2})\s([A-Za-z]+)\s(\d{4})",
         "validity_years": r"berlaku (?:untuk|paling lama) (\d+)",
         "nama": r"(?<=This is to certify that,\n)(.*)",
-        "certificate_number": r"No\. Reg\.\s([A-Za-z0-9\s]+)(?=\n)",
-        "competency": r"(?<=Competency:\n)(.*)"
+        "certificate_number": r"No\. Reg\.\s([A-Z]\s\d{4}\s\d{5}\s\d{4}\s\d{7}\s[A-Z]{2}\s\d{2})",
+        "competency": r"Competency:\s*([^\n]+)"
     }
 
     hasil = {}
