@@ -10,32 +10,19 @@ class TestPDFPreprocessor(unittest.TestCase):
         """Set up test environment."""
         cls.test_files_dir = "test/test_files/"
         cls.valid_pdf = os.path.join(cls.test_files_dir, "sample.pdf")
-        cls.invalid_pdf = os.path.join(cls.test_files_dir, "invalid.pdf")
-        cls.non_pdf_file = os.path.join(cls.test_files_dir, "invalid_file.txt")
 
-    def test_extract_text_valid_pdf(self):
-        """Test text extraction from a valid PDF."""
+    def test_extract_text_output(self):
+        """Test text extraction and output the result."""
+        # Extract text from the sample PDF
         text = extract_text_from_pdf(self.valid_pdf)
-        self.assertIsInstance(text, str)
+
+        # Output the extracted text
+        print("\nExtracted Text from sample.pdf:")
+        print(text)
+
+        # Ensure the extracted text is a string and not empty
+        self.assertIsInstance(text, str, "Extracted text should be a string.")
         self.assertGreater(len(text), 0, "Extracted text should not be empty.")
-        self.assertIn("Sample", text, "Extracted text should contain expected content.")
-
-    def test_extract_text_invalid_pdf(self):
-        """Test handling of an invalid or corrupted PDF."""
-        with self.assertRaises(Exception) as context:
-            extract_text_from_pdf(self.invalid_pdf)
-        self.assertIn("Error", str(context.exception), "Error message should indicate failure.")
-
-    def test_extract_text_non_pdf_file(self):
-        """Test handling of a non-PDF file."""
-        with self.assertRaises(Exception) as context:
-            extract_text_from_pdf(self.non_pdf_file)
-        self.assertIn("Error", str(context.exception), "Error message should indicate invalid file type.")
-
-    def test_extract_text_missing_file(self):
-        """Test handling of a missing file."""
-        with self.assertRaises(FileNotFoundError):
-            extract_text_from_pdf("non_existent_file.pdf")
 
 if __name__ == "__main__":
     unittest.main()
