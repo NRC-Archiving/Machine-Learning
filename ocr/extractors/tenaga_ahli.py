@@ -1,4 +1,5 @@
 import re
+from dateutil.relativedelta import relativedelta  # Added for safe date calculations
 from extractors.utils import parse_date
 
 def extract_tenaga_ahli(text):
@@ -21,7 +22,6 @@ def extract_tenaga_ahli(text):
         if terbit_match:
             day, month_name, year = terbit_match.groups()
             date_str = f"{day} {month_name} {year}"
-            print(f"Parsing terbit_date: {date_str}")  # Debugging
             try:
                 terbit_date = parse_date(date_str)  # Parse the date
                 hasil["terbit_date"] = terbit_date.strftime("%d-%m-%Y")
@@ -46,8 +46,7 @@ def extract_tenaga_ahli(text):
             if validity_years_match and "terbit_date" in hasil and hasil["terbit_date"] != "N/A":
                 years = int(validity_years_match.group(1))
                 try:
-                    terbit_date = parse_date(hasil["terbit_date"])
-                    validity_date = terbit_date.replace(year=terbit_date.year + years)
+                    validity_date = terbit_date + relativedelta(years=years)
                     hasil["validity"] = validity_date.strftime("%d-%m-%Y")
                 except Exception as e:
                     hasil["validity"] = f"Error calculating validity: {str(e)}"
