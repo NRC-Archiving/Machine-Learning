@@ -1,11 +1,8 @@
 import re
-from dateutil.relativedelta import relativedelta  # Added for safe date calculations
+from dateutil.relativedelta import relativedelta
 from extractors.utils import parse_date
 
 def extract_tenaga_ahli(text):
-    """
-    Extract data from the tenaga ahli document.
-    """
     patterns = {
         "terbit_date": r"(?i)\b(?:Diterbitkan(?: pertama tanggal)?|Diberikan pertama kali pada|tanggal:?|Ditetapkan(?: di \w+)?)[,:\s]*(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})",
         "validity_date": r"sampai(?: dengan tanggal)? (\d{1,2})\s([A-Za-z]+)\s(\d{4})",

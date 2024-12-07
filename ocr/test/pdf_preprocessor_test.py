@@ -9,7 +9,7 @@ class TestPDFPreprocessor(unittest.TestCase):
     def setUpClass(cls):
         """Set up test environment."""
         cls.test_files_dir = "test/test_files/"
-        cls.valid_pdf = os.path.join(cls.test_files_dir, "sample.pdf")
+        cls.valid_pdf = os.path.join(cls.test_files_dir, "ktp_sample.pdf")
 
     def test_extract_text_output(self):
         """Test text extraction and output the result."""
