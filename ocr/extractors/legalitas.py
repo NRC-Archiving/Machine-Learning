@@ -2,9 +2,6 @@ import re
 from extractors.utils import parse_date
 
 def extract_legalitas(text):
-    """
-    Ekstraksi data dari dokumen legalitas.
-    """
     patterns = {
         "tanggal_terbit": r"\b[Tt]anggal\s*:\s*(\d{1,2})\s+(\w+)\s+(\d{4})",
         "masa_berlaku": r"(?:sampai\s+dengan\s+tanggal\s*(\d{1,2})\s+(\w+)\s+(\d{4}))|(?:Masa\s+Berlaku\s+s\.d\.\s*:\s*(\d{4}-\d{2}-\d{2}))",
