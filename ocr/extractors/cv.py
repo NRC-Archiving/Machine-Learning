@@ -8,7 +8,7 @@ def extract_cv(text):
     patterns = {
         "experience": r"(\b\w+\s\d{4}\s-\s(?:\w+\s\d{4}|Present|[Ss]ekarang))\s*:\s*(.*)\n([\s\S]+?)(?=\n\n|\Z)",
         "nama": r"Nama\s*:\s*(.*)",
-        "ttl": r"Tempat\s*&\s*Tgl\.\s*Lahir\s*:\s*(.*)",
+        "ttl": r"Lahir\s*:\s*(.*)",
         "education": r"Pendidikan\s*:\s*(.*?)\s(.*?)\s*-\s*(\d{4})"
     }
 
