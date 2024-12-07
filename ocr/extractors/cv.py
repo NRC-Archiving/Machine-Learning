@@ -6,15 +6,14 @@ def extract_cv(text):
     Ekstrak data dari dokumen CV.
     """
     patterns = {
-        "experience": r"(\b\w+\s\d{4}\s-\s(?:\w+\s\d{4}|Present))\s*:\s*(.*)\n([\s\S]+?)(?=\n\n|\Z)",
+        "experience": r"(\b\w+\s\d{4}\s-\s(?:\w+\s\d{4}|Present|[Ss]ekarang))\s*:\s*(.*)\n([\s\S]+?)(?=\n\n|\Z)",
         "nama": r"Nama\s*:\s*(.*)",
         "ttl": r"Tempat\s*&\s*Tgl\.\s*Lahir\s*:\s*(.*)",
         "education": r"Pendidikan\s*:\s*(.*?)\s(.*?)\s*-\s*(\d{4})"
     }
 
     try:
-        hasil = {"document_type": "cv"}
-
+        hasil = {}
         # Ekstraksi nama
         nama_match = re.search(patterns["nama"], text)
         hasil["nama"] = nama_match.group(1).strip() if nama_match else "N/A"
