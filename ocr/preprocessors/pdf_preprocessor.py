@@ -47,14 +47,16 @@ async def process_page_async(image, page_num, preprocessing_method="trunc"):
     except Exception as e:
         return f"--- Page {page_num + 1} ---\n[ERROR] {str(e)}"
 
-async def extract_text_from_pdf_async(pdf_path, dpi=300, preprocessing_method="trunc"):
+async def extract_text_from_pdf_async(pdf_path, dpi=300, preprocessing_method="trunc", doc_type=None):
     try:
         # Convert PDF to images
         images = convert_pdf_to_images(pdf_path, dpi)
 
-        # Select specific pages: first 7 and last 7 if more than 15
+        # Modify page selection based on doc_type
         total_pages = len(images)
-        if total_pages > 15:
+        if doc_type == "keuangan":
+            images = images[:7]  # Limit to the first 7 pages
+        elif total_pages > 15:  # Default behavior for other document types
             images = images[:7] + images[-7:]
 
         # Process images concurrently
@@ -67,9 +69,8 @@ async def extract_text_from_pdf_async(pdf_path, dpi=300, preprocessing_method="t
     except Exception as e:
         raise ValueError(f"Error extracting text from PDF: {e}")
 
-def extract_text_from_pdf(pdf_path, dpi=300, preprocessing_method="trunc"):
+def extract_text_from_pdf(pdf_path, dpi=300, preprocessing_method="trunc", doc_type=None):
     try:
-        # Use asyncio to process images asynchronously
-        return asyncio.run(extract_text_from_pdf_async(pdf_path, dpi, preprocessing_method))
+        return asyncio.run(extract_text_from_pdf_async(pdf_path, dpi, preprocessing_method, doc_type))
     except Exception as e:
         raise ValueError(f"Error in synchronous extraction: {e}")
