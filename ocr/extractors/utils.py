@@ -28,6 +28,15 @@ def parse_date(date_str, format_hint=None):
                 raise ValueError(f"Bulan tidak dikenali: {month_name}")
             return datetime.strptime(f"{day.zfill(2)}-{month_number}-{year}", "%d-%m-%Y")
 
+        # Match Month Day, Year: "December 31, 2020"
+        match = re.match(r"(\w+)\s+(\d{1,2}),\s+(\d{4})", date_str)
+        if match:
+            month_name, day, year = match.groups()
+            month_number = month_mapping.get(month_name.lower())
+            if not month_number:
+                raise ValueError(f"Bulan tidak dikenali: {month_name}")
+            return datetime.strptime(f"{day.zfill(2)}-{month_number}-{year}", "%d-%m-%Y")
+
         # Match partial date: "Jan 2004" (default day = 1)
         match = re.match(r"(\w+)\s+(\d{4})", date_str)
         if match:
@@ -40,4 +49,3 @@ def parse_date(date_str, format_hint=None):
         raise ValueError(f"Tanggal tidak valid: {date_str}")
     except Exception as e:
         raise ValueError(f"Error parsing date: {date_str} ({str(e)})")
-
