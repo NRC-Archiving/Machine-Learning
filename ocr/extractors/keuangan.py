@@ -6,79 +6,41 @@ def extract_keuangan(text):
     Ekstrak data dari dokumen keuangan.
     """
     patterns = {
-        "tanggal": (
-            r"Printed\s*On\s*:\s*(\d{2}-\w{3}-\d{4})|"
-            r"Tanggal\s*Penyampaian\s*:\s*(\d{2}/\d{2}/\d{4})|"
-            r"([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?,\s*\d{1,2}\s*[A-Za-z]+\s*\d{4})|"
-            r"Tanggal\s*:\s*(\d{2}\s*\w+\s*\d{4})"
-        ),
-        "periode": (
-            r"FROM\s*:\s*(\d{4})|"
-            r"Tahun\s*Pajak\s*:\s*(\d{4})|"
-            r"yang\s*Berakhir\s*pada\s*.*?(\d{4})|"
-            r"sampai\s*dengan\s*tanggal\s*(\d{4})"
-        ),
-        "nomor": (
-            r"(?:Nomor/Number\s?:)\s?([^\s]+)|"
-            r"(?:Nomor\s*Tanda\s*Terima\s*Elektronik\s?:)\s?([^\s]+)|"
-            r"(?:Nomor\s?:)\s?([^\s]+)"
-        ),
+        "tanggal": r"Printed\s*On\s*:\s*(\d{2}-\w{3}-\d{4})|Tanggal\s*Penyampaian\s*:\s*(\d{2}/\d{2}/\d{4})|/\s*([A-Za-z]+\s+\d{1,2},\s+\d{4})|Tanggal\s*:\s*(\d{2}\s*\w+\s*\d{4})",
+        "periode": r"FROM\s*:\s*(\d{4})|Tahun\s*Pajak\s*:\s*(\d{4})|yang\s*Berakhir\s*pada\s*.*?(\d{4})|sampai\s*dengan\s*tanggal\s*(\d{4})",
+        "nomor":   r"(?:Nomor/Number\s?:)\s?([^\s]+)|(?:Nomor\s*Tanda\s*Terima\s*Elektronik\s?:)\s?([^\s]+)|(?:Nomor\s?:)\s?([^\s]+)"
     }
 
     hasil = {}
 
     try:
-        # Extract tanggal
-        tanggal_matches = re.findall(patterns["tanggal"], text)
+        # Extract 'tanggal' (dates)
+        tanggal_matches = re.search(patterns["tanggal"], text)
         if tanggal_matches:
-            extracted_dates = []
-            for match in tanggal_matches:
-                if match[0]:  # Case: "[Location], dd Month yyyy"
-                    location_date = match[0]
-                    try:
-                        # Extract components from "Jakarta, 20 April 2021"
-                        location, day, month, year = re.match(
-                            r"([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s*,\s*(\d{1,2})\s*([A-Za-z]+)\s*(\d{4})",
-                            location_date
-                        ).groups()
-                        # Convert month name to numeric
-                        from extractors.utils import map_month_name
-                        month_mapping = map_month_name()
-                        month_numeric = month_mapping[month.lower()]
-                        parsed_date = f"{int(day):02d}-{month_numeric}-{year}"
-                        extracted_dates.append(parsed_date)
-                    except Exception as e:
-                        extracted_dates.append(f"Error parsing tanggal: {str(e)}")
-                else:
-                    continue  # Skip other matches
-
-            # Deduplicate and keep only unique dates
-            hasil["tanggal"] = list(dict.fromkeys(extracted_dates))
+            raw_tanggal = next((match for match in tanggal_matches.groups() if match), None)
+            if raw_tanggal:
+                try:
+                    hasil["tanggal"] = parse_date(raw_tanggal).strftime("%d-%m-%Y")
+                except ValueError:
+                    hasil["tanggal"] = f"Invalid date: {raw_tanggal}"
+            else:
+                hasil["tanggal"] = "N/A"
         else:
-            hasil["tanggal"] = ["N/A"]
+            hasil["tanggal"] = "N/A"
 
-        # Extract periode (tahun)
-        periode_matches = re.findall(patterns["periode"], text)
+        # Extract 'periode' (tahun)
+        periode_matches = re.search(patterns["periode"], text)
         if periode_matches:
-            extracted_years = []
-            for idx, match in enumerate(periode_matches):
-                years = [int(year) for year in match if year]
-                if idx == 2:  # Case: "yang Berakhir pada ..."
-                    if years:
-                        extracted_years.append(max(years))  # Take the maximum year
-                else:
-                    extracted_years.extend(years)
-            hasil["tahun"] = list(set(extracted_years))  # Ensure unique years
+            hasil["tahun"] = next((year for year in periode_matches.groups() if year), "N/A")
         else:
-            hasil["tahun"] = ["N/A"]
+            hasil["tahun"] = "N/A"
 
-        # Extract nomor
-        nomor_matches = re.findall(patterns["nomor"], text)
+        # Extract 'nomor'
+        nomor_matches = re.search(patterns["nomor"], text)
         if nomor_matches:
-            extracted_nomor = [match[0] or match[1] or match[2] for match in nomor_matches]
-            hasil["nomor"] = extracted_nomor
+            hasil["nomor"] = next((match for match in nomor_matches.groups() if match), "N/A")
         else:
-            hasil["nomor"] = ["N/A"]
+            hasil["nomor"] = "N/A"
 
     except Exception as e:
         hasil["error"] = f"Error processing keuangan: {str(e)}"
