@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 from extractors.utils import parse_date
 
 def extract_keuangan(text):
@@ -6,9 +7,9 @@ def extract_keuangan(text):
     Ekstrak data dari dokumen keuangan.
     """
     patterns = {
-        "tanggal": r"Printed\s*On\s*:\s*(\d{2}-\w{3}-\d{4})|Tanggal\s*Penyampaian\s*:\s*(\d{2}/\d{2}/\d{4})|/\s*([A-Za-z]+\s+\d{1,2},\s+\d{4})|Tanggal\s*:\s*(\d{2}\s*\w+\s*\d{4})",
+        "tanggal": r"Printed\s*On\s*:\s*(\d{2}-\w{3}-\d{4})|Tanggal\s*Pen[vy]ampaian\s*:\s*(\d{2}/\d{2}/\d{4})|/\s*([A-Za-z]+\s+\d{1,2},\s+\d{4})|Tanggal\s*:\s*(\d{2}\s*\w+\s*\d{4})",
         "periode": r"FROM\s*:\s*(\d{4})|Tahun\s*Pajak\s*:\s*(\d{4})|yang\s*Berakhir\s*pada\s*.*?(\d{4})|sampai\s*dengan\s*tanggal\s*(\d{4})",
-        "nomor":   r"(?:Nomor/Number\s?:)\s?([^\s]+)|(?:Nomor\s*Tanda\s*Terima\s*Elektronik\s?:)\s?([^\s]+)|(?:Nomor\s?:)\s?([^\s]+)"
+        "nomor":   r"(?:Nomor/Number\s?:)\s?([^\s]+)|(?:Nomor\sTanda\sTerima\sElektronik\s?:)\s?([\d/-]+)|(?:Nomor\s?:)\s?([^\s]+)"
     }
 
     hasil = {}
@@ -22,7 +23,12 @@ def extract_keuangan(text):
                 try:
                     hasil["tanggal"] = parse_date(raw_tanggal).strftime("%d-%m-%Y")
                 except ValueError:
-                    hasil["tanggal"] = f"Invalid date: {raw_tanggal}"
+                    # Fallback logic for invalid date format
+                    try:
+                        fallback_date = datetime.strptime(raw_tanggal, "%d/%m/%Y")
+                        hasil["tanggal"] = fallback_date.strftime("%d-%m-%Y")
+                    except ValueError:
+                        hasil["tanggal"] = f"Invalid date: {raw_tanggal}"
             else:
                 hasil["tanggal"] = "N/A"
         else:
