@@ -6,7 +6,7 @@ def map_month_name():
         ["Januari", "Jan", "January"], ["Februari", "Feb", "February"],
         ["Maret", "Mar", "March"], ["April", "Apr"], ["Mei", "May"],
         ["Juni", "Jun", "June"], ["Juli", "Jul", "July"],
-        ["Agustus", "Agu", "Aug", "August"], ["September", "Sep"],
+        ["Agustus", "Agu", "Agt", "Aug", "August"], ["September", "Sep"],
         ["Oktober", "Okt", "Oct", "October"], ["November", "Nov"],
         ["Desember", "Des", "Dec", "December"]
     ]
@@ -19,7 +19,7 @@ def parse_date(date_str, format_hint=None):
         if format_hint:
             return datetime.strptime(date_str, format_hint)
 
-        # Coba format umum: "12 Januari 2023"
+        # Match full date: "12 Januari 2023"
         match = re.match(r"(\d{1,2})\s+(\w+)\s+(\d{4})", date_str)
         if match:
             day, month_name, year = match.groups()
@@ -27,7 +27,17 @@ def parse_date(date_str, format_hint=None):
             if not month_number:
                 raise ValueError(f"Bulan tidak dikenali: {month_name}")
             return datetime.strptime(f"{day.zfill(2)}-{month_number}-{year}", "%d-%m-%Y")
-        else:
-            raise ValueError(f"Tanggal tidak valid: {date_str}")
+
+        # Match partial date: "Jan 2004" (default day = 1)
+        match = re.match(r"(\w+)\s+(\d{4})", date_str)
+        if match:
+            month_name, year = match.groups()
+            month_number = month_mapping.get(month_name.lower())
+            if not month_number:
+                raise ValueError(f"Bulan tidak dikenali: {month_name}")
+            return datetime.strptime(f"01-{month_number}-{year}", "%d-%m-%Y")
+
+        raise ValueError(f"Tanggal tidak valid: {date_str}")
     except Exception as e:
         raise ValueError(f"Error parsing date: {date_str} ({str(e)})")
+

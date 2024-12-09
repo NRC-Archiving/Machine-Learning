@@ -3,93 +3,80 @@ from extractors.utils import parse_date
 
 def extract_cv(text):
     """
-    Ekstrak data dari dokumen CV.
+    Extract data from CV document with enhanced error handling.
     """
     patterns = {
-        "experience": r"(\b\w+\s\d{4}\s-\s(?:\w+\s\d{4}|Present|[Ss]ekarang))\s*:\s*(.*)\n([\s\S]+?)(?=\n\n|\Z)",
         "nama": r"Nama\s*:\s*(.*)",
-        "ttl": r"Lahir\s*:\s*(.*)",
-        "education": r"Pendidikan\s*:\s*(.*?)(?=\n\n|$)",
-        "degree_year": r"([A-Za-z0-9]+( [A-Za-z0-9]+)+)\s*-\s*[0-9]+"
-    }
+        "alamat": r"Alamat Kantor\s*:\s*(.*?)\nTelpon",
+        "telpon": r"Te[le]pon\s*:\s*(.*?)(?=\n|$)",
+        "ttl": r"Lahir\s*:\s*(.*?)(?=\n|$)",
+        "education": r"Pendidikan\s*:\s*(.*?)\n(?:\s*(.*?)\s-\s(\d{4}))*",
+        "degree_year": r"(\D+)\s-\s(\d{4})",
+        "experience": r"(\w+\s\d{4})\s*-\s*(Sekarang|Present)\s*([^\n]+)\n([^\n]*)"    
+        }
 
     try:
-        hasil = {}
-        # Ekstraksi nama
+        results = {}
+
+        # Extract name
         nama_match = re.search(patterns["nama"], text)
-        hasil["nama"] = nama_match.group(1).strip() if nama_match else "N/A"
+        results["nama"] = nama_match.group(1).strip() if nama_match else "N/A"
 
-        # Ekstraksi TTL
+        # Extract address
+        alamat_match = re.search(patterns["alamat"], text, re.DOTALL)
+        if alamat_match:
+            alamat_raw = alamat_match.group(1).strip()
+            results["alamat"] = re.sub(r"\s*\n\s*", " ", alamat_raw)  # Replace newlines with spaces
+        else:
+            results["alamat"] = "N/A"
+
+        # Extract phone numbers
+        telpon_match = re.search(patterns["telpon"], text)
+        results["telpon"] = telpon_match.group(1).strip().replace("\n", ", ") if telpon_match else "N/A"
+
+        # Extract place and date of birth
         ttl_match = re.search(patterns["ttl"], text)
-        hasil["ttl"] = ttl_match.group(1).strip() if ttl_match else "N/A"
+        results["ttl"] = ttl_match.group(1).strip() if ttl_match else "N/A"
 
-        # Ekstraksi pendidikan
-        education_match = re.search(patterns["education"], text, re.MULTILINE)
+        # Extract education details
+        education_match = re.search(patterns["education"], text, re.DOTALL)
         if education_match:
-            univ = education_match.group(1).strip()  # Assign the full education text to univ
-            print(f"Debug: Extracted university text: {univ}")  # Debugging line
+            institution = education_match.group(1).strip()
+            degree_year_matches = re.findall(r"(.+?)\s-\s(\d{4})", education_match.group(0))
+            results["education"] = [
+                {"institution": institution, "degree": degree.strip(), "graduation_year": int(year)}
+                for degree, year in degree_year_matches
+            ]
+        else:
+            results["education"] = []
 
-            # Extract degree and graduation year from the university text
-            degree_year_match = re.search(patterns["degree_year"], univ, re.MULTILINE)
-            hasil["degree_year"] = degree_year_match.group(1).strip()
-            print(hasil["degree_year"])
-            if degree_year_match:
-                degree, graduation_year = degree_year_match.groups()
-                hasil["education"] = {
-                    "university": univ,
-                    "degree": degree.strip(),
-                    "graduation_year": int(graduation_year)
+        # Extract the entry with "Sekarang" or "Present"
+        match = re.search(patterns["experience"], text, re.DOTALL)
+        if match:
+            start_date_str, end_date_str, role, project_line = match.groups()
+            try:
+                # Parse start date
+                start_date = parse_date(start_date_str).strftime("%Y-%m-%d")
+
+                # Assign "Present" as the end date
+                end_date = "Present"
+
+                # Construct the latest experience result
+                latest_experience = {
+                    "start_date": start_date,
+                    "end_date": end_date,
+                    "role": role.strip(),
+                    "project": project_line.strip() if project_line else "N/A"
                 }
-            else:
-                hasil["education"] = {
-                    "university": univ,
-                    "degree": "N/A",
-                    "graduation_year": "N/A"
-                }
-        # if education_match:
-        #     univ, gelar, lulus = education_match.groups()
-        #     hasil["education"] = {
-        #         "university": univ.strip(),
-        #         "degree": gelar.strip(),
-        #         "graduation_year": int(lulus)
-        #     }
+            except Exception as exp_err:
+                raise RuntimeError(f"Error parsing experience entry: {exp_err}")
+        else:
+            latest_experience = None  # No match found
+            
+        # Assign the result
+        results["latest_experience"] = latest_experience
 
-        # Ekstraksi pengalaman kerja
-        # experiences = []
-        # for date_range, role, project in re.findall(patterns["experience"], text):
-        #     try:
-        #         company_name_match = re.search(r"(.*)\n" + re.escape(date_range), text)
-        #         company_name = company_name_match.group(1).strip() if company_name_match else "Unknown Company"
-        #         start_date, end_date = map(parse_date, date_range.split(" - "))
-        #         duration = (end_date - start_date).days / 365.25
+        return results
 
-        #         experiences.append({
-        #             "company": company_name,
-        #             "role": role.strip() if role else "No role specified",
-        #             "project": project.replace("\n", " "),
-        #             "start_date": start_date.strftime("%d-%m-%Y") if start_date else None,
-        #             "end_date": end_date.strftime("%d-%m-%Y") if end_date else None,
-        #             "duration_years": round(duration, 2)
-        #         })
-        #     except Exception as e:
-        #         continue  # Skip invalid entries
-
-        # # Menentukan pengalaman terbaru dan total durasi pengalaman
-        # if experiences:
-        #     latest_experience = max(experiences, key=lambda x: x["end_date"])
-        #     total_years = round(sum(exp["duration_years"] for exp in experiences if exp["duration_years"]), 2)
-        #     hasil["latest_experience"] = {
-        #         "project": latest_experience["project"],
-        #         "company": latest_experience["company"],
-        #         "role": latest_experience["role"]
-        #     }
-        #     hasil["total_years_of_experience"] = total_years
-        # else:
-        #     hasil["latest_experience"] = "No experience found"
-        #     hasil["total_years_of_experience"] = 0
-
-        # hasil["experiences"] = experiences
-
-        return hasil
     except Exception as e:
-        return {"error": f"Error processing CV: {str(e)}"}
+        raise RuntimeError(f"Critical error processing CV: {e}")
