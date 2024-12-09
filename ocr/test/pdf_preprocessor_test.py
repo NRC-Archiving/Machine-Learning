@@ -1,6 +1,7 @@
 import unittest
 import os
-from preprocessors.pdf_preprocessor import extract_text_from_pdf
+import asyncio
+from preprocessors.pdf_preprocessor import extract_text_from_pdf_async
 
 class TestPDFPreprocessor(unittest.TestCase):
     """Unit tests for the PDF preprocessor."""
@@ -9,15 +10,15 @@ class TestPDFPreprocessor(unittest.TestCase):
     def setUpClass(cls):
         """Set up test environment."""
         cls.test_files_dir = "test/test_files/"
-        cls.valid_pdf = os.path.join(cls.test_files_dir, "ktp_sample.pdf")
+        cls.valid_pdf = os.path.join(cls.test_files_dir, "sample_keuangan.pdf")
 
     def test_extract_text_output(self):
         """Test text extraction and output the result."""
-        # Extract text from the sample PDF
-        text = extract_text_from_pdf(self.valid_pdf)
+        # Run the asynchronous function synchronously using asyncio.run
+        text = asyncio.run(extract_text_from_pdf_async(self.valid_pdf, doc_type="keuangan"))
 
         # Output the extracted text
-        print("\nExtracted Text from sample.pdf:")
+        print("\nExtracted Text from sample_keuangan.pdf:")
         print(text)
 
         # Ensure the extracted text is a string and not empty
