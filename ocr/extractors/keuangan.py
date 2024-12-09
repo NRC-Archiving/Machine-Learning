@@ -9,7 +9,7 @@ def extract_keuangan(text):
         "tanggal": (
             r"Printed\s*On\s*:\s*(\d{2}-\w{3}-\d{4})|"
             r"Tanggal\s*Penyampaian\s*:\s*(\d{2}/\d{2}/\d{4})|"
-            r"(\w+\s*\d{1,2},\s*\d{4})|"
+            r"([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?,\s*\d{1,2}\s*[A-Za-z]+\s*\d{4})|"
             r"Tanggal\s*:\s*(\d{2}\s*\w+\s*\d{4})"
         ),
         "periode": (
@@ -33,15 +33,27 @@ def extract_keuangan(text):
         if tanggal_matches:
             extracted_dates = []
             for match in tanggal_matches:
-                for group in match:
-                    if group:
-                        try:
-                            parsed_date = parse_date(group.strip())
-                            extracted_dates.append(parsed_date.strftime("%d-%m-%Y"))
-                        except ValueError as e:
-                            extracted_dates.append(f"Error parsing tanggal: {str(e)}")
-                        break
-            hasil["tanggal"] = extracted_dates
+                if match[0]:  # Case: "[Location], dd Month yyyy"
+                    location_date = match[0]
+                    try:
+                        # Extract components from "Jakarta, 20 April 2021"
+                        location, day, month, year = re.match(
+                            r"([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s*,\s*(\d{1,2})\s*([A-Za-z]+)\s*(\d{4})",
+                            location_date
+                        ).groups()
+                        # Convert month name to numeric
+                        from extractors.utils import map_month_name
+                        month_mapping = map_month_name()
+                        month_numeric = month_mapping[month.lower()]
+                        parsed_date = f"{int(day):02d}-{month_numeric}-{year}"
+                        extracted_dates.append(parsed_date)
+                    except Exception as e:
+                        extracted_dates.append(f"Error parsing tanggal: {str(e)}")
+                else:
+                    continue  # Skip other matches
+
+            # Deduplicate and keep only unique dates
+            hasil["tanggal"] = list(dict.fromkeys(extracted_dates))
         else:
             hasil["tanggal"] = ["N/A"]
 
