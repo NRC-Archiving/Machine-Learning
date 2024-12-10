@@ -9,32 +9,34 @@ def extract_surat_keluar(text):
     }
 
     # Extract values based on patterns
-    extracted_data = {}
+    hasil = {}
 
     try:
         # Process "tanggal"
         tanggal_match = re.search(patterns["tanggal"], text)
         if tanggal_match:
-            tanggal_str = tanggal_match.group(2)
+            tanggal_str = tanggal_match.group()
             try:
                 tanggal = parse_date(tanggal_str)  # Convert to datetime
-                extracted_data["tanggal"] = tanggal.isoformat()
+                hasil["tanggal"] = tanggal.isoformat()
             except ValueError:
-                extracted_data["tanggal"] = "N/A"
+                hasil["tanggal"] = "N/A"
         else:
-            extracted_data["tanggal"] = "N/A"
+            hasil["tanggal"] = "N/A"
 
         # Process "nomor"
         nomor_match = re.search(patterns["nomor"], text)
-        extracted_data["nomor"] = nomor_match.group(1) if nomor_match else "N/A"
+        hasil["nomor"] = nomor_match.group(1) if nomor_match else "N/A"
 
         # Process "perihal"
         perihal_match = re.search(patterns["perihal"], text)
         if perihal_match:
             perihal = perihal_match.group(1) or perihal_match.group(2)
-            extracted_data["perihal"] = perihal.strip() if perihal else "N/A"
+            hasil["perihal"] = perihal.strip() if perihal else "N/A"
         else:
-            extracted_data["perihal"] = "N/A"
+            hasil["perihal"] = "N/A"
+            
+            return hasil
 
     except Exception as e:
         raise RuntimeError(f"Critical error processing CV: {e}")

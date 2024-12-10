@@ -14,6 +14,6 @@ __all__ = [
     "extract_cv",
     "extract_keuangan",
     "extract_surat_masuk",
-    "extract_surat_keluar"
+    "extract_surat_keluar",
     "extract_pengurus_pemegang_saham"
 ]
