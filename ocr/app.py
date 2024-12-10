@@ -9,6 +9,7 @@ from extractors import (
     extract_cv,
     extract_keuangan,
     extract_surat_masuk,
+    extract_surat_keluar,
     extract_pengurus_pemegang_saham
 )
 import asyncio
@@ -51,6 +52,7 @@ def extract_document():
             "cv": extract_cv,
             "keuangan": extract_keuangan,
             "surat_masuk": extract_surat_masuk,
+            "surat_keluar": extract_surat_keluar,
             "pengurus": extract_pengurus_pemegang_saham,
             "pemegang_saham": extract_pengurus_pemegang_saham
         }
