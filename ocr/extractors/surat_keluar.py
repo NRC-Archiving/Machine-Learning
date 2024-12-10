@@ -15,12 +15,13 @@ def extract_surat_keluar(text):
         # Process "tanggal"
         tanggal_match = re.search(patterns["tanggal"], text)
         if tanggal_match:
-            tanggal_str = tanggal_match.group()
+            day, month_name, year = tanggal_match.groups()
+            date_str = f"{day} {month_name} {year}"
             try:
-                tanggal = parse_date(tanggal_str)  # Convert to datetime
-                hasil["tanggal"] = tanggal.isoformat()
-            except ValueError:
-                hasil["tanggal"] = "N/A"
+                tanggal = parse_date(date_str)  # Parse the date
+                hasil["tanggal"] = tanggal.strftime("%d-%m-%Y")
+            except Exception as e:
+                hasil["tanggal"] = f"Error parsing tanggal: {str(e)}"
         else:
             hasil["tanggal"] = "N/A"
 
