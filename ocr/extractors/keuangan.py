@@ -20,15 +20,16 @@ def extract_keuangan(text):
         if tanggal_matches:
             raw_tanggal = next((match for match in tanggal_matches.groups() if match), None)
             if raw_tanggal:
+                preprocessed_tanggal = raw_tanggal.replace("-", " ")
                 try:
-                    hasil["tanggal"] = parse_date(raw_tanggal).strftime("%d-%m-%Y")
+                    hasil["tanggal"] = parse_date(preprocessed_tanggal).strftime("%d-%m-%Y")
                 except ValueError:
                     # Fallback logic for invalid date format
                     try:
-                        fallback_date = datetime.strptime(raw_tanggal, "%d/%m/%Y")
+                        fallback_date = datetime.strptime(preprocessed_tanggal, "%d/%m/%Y")
                         hasil["tanggal"] = fallback_date.strftime("%d-%m-%Y")
                     except ValueError:
-                        hasil["tanggal"] = f"Invalid date: {raw_tanggal}"
+                        hasil["tanggal"] = f"Invalid date: {preprocessed_tanggal}"
             else:
                 hasil["tanggal"] = "N/A"
         else:
