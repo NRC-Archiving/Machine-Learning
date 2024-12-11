@@ -15,13 +15,12 @@ def extract_surat_keluar(text):
         # Process "tanggal"
         tanggal_match = re.search(patterns["tanggal"], text)
         if tanggal_match:
-            day, month_name, year = tanggal_match.groups()
-            date_str = f"{day} {month_name} {year}"
+            _, date_str = tanggal_match.groups()
             try:
-                tanggal = parse_date(date_str)  # Parse the date
-                hasil["tanggal"] = tanggal.strftime("%d-%m-%Y")
-            except Exception as e:
-                hasil["tanggal"] = f"Error parsing tanggal: {str(e)}"
+                parsed_date = parse_date(date_str)
+                hasil["tanggal"] = parsed_date.strftime("%d-%m-%Y")
+            except ValueError as e:
+                hasil["tanggal"] = f"Error parsing date: {str(e)}"
         else:
             hasil["tanggal"] = "N/A"
 
@@ -36,8 +35,8 @@ def extract_surat_keluar(text):
             hasil["perihal"] = perihal.strip() if perihal else "N/A"
         else:
             hasil["perihal"] = "N/A"
-            
-            return hasil
+
+        return hasil
 
     except Exception as e:
-        raise RuntimeError(f"Critical error processing CV: {e}")
+        raise RuntimeError(f"Critical error processing text: {e}")
