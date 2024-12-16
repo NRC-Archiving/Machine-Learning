@@ -5,7 +5,7 @@ def extract_surat_keluar(text):
     patterns = {
         "tanggal": r"\b([A-Z][a-z]*(?: [A-Z][a-z]*)?),\s*(\d{1,2} [A-Z][a-z]+ \d{4})",
         "nomor": r"[Nn]o[.:]\s*([^\s]+)",
-        "perihal": r"(?i)surat\spernyataan\s*(.*?)\n|[Pp]erihal\s*:\s*([^\s]+)"
+        "perihal": r"(?i)surat\spernyataan\s*(.*?)\n|[Pp]eri[t]hal\s*[:;=_]\s*([^\n]+)"
     }
 
     # Extract values based on patterns
@@ -35,7 +35,8 @@ def extract_surat_keluar(text):
             hasil["perihal"] = perihal.strip() if perihal else "N/A"
         else:
             hasil["perihal"] = "N/A"
-
+            
+        print(hasil["perihal"])
         return hasil
 
     except Exception as e:
