@@ -1,6 +1,6 @@
 from PIL import Image
 
-def crop_image_body(image_path: str, output_path: str, crop_ratio: float = 0.2):
+def crop_image_body(image_path: str, output_path: str, crop_ratio: float = 0.1):
     """
     Crop the body of an image by excluding the top portion (letterhead).
 

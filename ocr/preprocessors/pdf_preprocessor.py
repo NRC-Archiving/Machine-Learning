@@ -6,8 +6,7 @@ from pdf2image import convert_from_path
 import pytesseract
 from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
-from crop_letterhead import crop_image_body
-
+from preprocessors.crop_letterhead import crop_image_body
 
 def preprocess_image(image, method="trunc", remove_lines=False):
     """
@@ -73,22 +72,28 @@ def process_image(image_path, crop_ratio, doc_type, preprocessing_method, remove
     """
     Process a single image: Crop, preprocess, and perform OCR.
     """
-    if doc_type in ["surat_keluar", "surat_masuk"]:
-        cropped_image_path = image_path.replace(".jpg", "_cropped.jpg")
-        print(f"Document type '{doc_type}' detected. Cropping body...")
-        crop_image_body(image_path, cropped_image_path, crop_ratio)
-        image_path = cropped_image_path
-    else:
-        print(f"Document type '{doc_type}' does not require cropping. Skipping cropping step.")
+    try:
+        # Crop the image if needed
+        if doc_type in ["surat_keluar", "surat_masuk"]:
+            cropped_image_path = image_path.replace(".jpg", "_cropped.jpg")
+            print(f"Document type '{doc_type}' detected. Cropping body...")
+            crop_image_body(image_path, cropped_image_path, crop_ratio)
+            image_path = cropped_image_path
+        else:
+            print(f"Document type '{doc_type}' does not require cropping. Skipping cropping step.")
 
-    # Preprocess the image
-    preprocessed_image = preprocess_image(image_path, method=preprocessing_method, remove_lines=remove_lines)
-    preprocessed_image_path = image_path.replace(".jpg", "_preprocessed.jpg")
-    cv2.imwrite(preprocessed_image_path, preprocessed_image)
+        # Preprocess the image
+        preprocessed_image = preprocess_image(image_path, method=preprocessing_method, remove_lines=remove_lines)
+        preprocessed_image_path = image_path.replace(".jpg", "_preprocessed.jpg")
+        cv2.imwrite(preprocessed_image_path, preprocessed_image)
 
-    # Perform OCR
-    text = pytesseract.image_to_string(Image.fromarray(preprocessed_image))
-    return text
+        # Perform OCR
+        text = pytesseract.image_to_string(Image.fromarray(preprocessed_image))
+        return text
+
+    except Exception as e:
+        print(f"Error processing image {image_path}: {e}")
+        return ""
 
 def preprocess_pdf_and_extract_text(pdf_path: str, output_folder: str, crop_ratio: float = 0.2, doc_type: str = "unknown", preprocessing_method: str = "trunc", remove_lines: bool = False):
     """
@@ -120,12 +125,22 @@ def preprocess_pdf_and_extract_text(pdf_path: str, output_folder: str, crop_rati
         image.save(image_path, "JPEG")
         image_paths.append(image_path)
 
-    # Parallel processing
+    # Parallel processing with limited workers
     full_text = ""
-    with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
-        results = executor.map(process_image, image_paths, [crop_ratio]*len(image_paths), 
-                               [doc_type]*len(image_paths), [preprocessing_method]*len(image_paths), [remove_lines]*len(image_paths))
+    with ProcessPoolExecutor(max_workers=min(4, multiprocessing.cpu_count())) as executor:
+        results = executor.map(
+            process_image,
+            image_paths,
+            [crop_ratio] * len(image_paths),
+            [doc_type] * len(image_paths),
+            [preprocessing_method] * len(image_paths),
+            [remove_lines] * len(image_paths)
+        )
         for text in results:
             full_text += text + "\n"
 
     return full_text
+
+# Required for Windows multiprocessing
+if __name__ == "__main__":
+    multiprocessing.set_start_method("spawn", force=True)

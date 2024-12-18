@@ -29,7 +29,7 @@ def allowed_file(filename):
 @app.route('/extract', methods=['POST'])
 def extract_document():
     doc_type = request.form.get('doc_type', 'unknown')
-    crop_ratio = float(request.form.get('crop_ratio', 0.2))
+    crop_ratio = float(request.form.get('crop_ratio', 0.1))
     remove_lines = request.form.get('remove_lines', 'false').lower() == 'true'
     preprocessing_method = request.form.get('preprocessing_method', 'trunc')
     file = request.files.get('file')
