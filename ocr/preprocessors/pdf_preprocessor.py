@@ -7,6 +7,7 @@ import pytesseract
 from concurrent.futures import ProcessPoolExecutor
 import multiprocessing
 from preprocessors.crop_letterhead import crop_image_body
+import tempfile
 
 def preprocess_image(image, method="trunc", remove_lines=False):
     """
@@ -46,62 +47,37 @@ def preprocess_image(image, method="trunc", remove_lines=False):
     except Exception as e:
         raise ValueError(f"Error during image preprocessing: {e}")
 
-def convert_pdf_to_images(pdf_path: str, output_folder: str):
-    """
-    Convert PDF to images using pdf2image.
-
-    Args:
-        pdf_path (str): Path to the input PDF file.
-        output_folder (str): Directory to save the resulting images.
-
-    Returns:
-        List[str]: Paths to the generated image files.
-    """
-    print("Converting PDF to images...")
-    images = convert_from_path(pdf_path)
-    image_paths = []
-    
-    for i, image in enumerate(images):
-        image_path = os.path.join(output_folder, f"page_{i + 1}.jpg")
-        image.save(image_path, "JPEG")
-        image_paths.append(image_path)
-    print(f"Saved images to {output_folder}")
-    return image_paths
-
 def process_image(image_path, crop_ratio, doc_type, preprocessing_method, remove_lines):
     """
     Process a single image: Crop, preprocess, and perform OCR.
     """
     try:
-        # Crop the image if needed
-        if doc_type in ["surat_keluar", "surat_masuk"]:
-            cropped_image_path = image_path.replace(".jpg", "_cropped.jpg")
-            print(f"Document type '{doc_type}' detected. Cropping body...")
-            crop_image_body(image_path, cropped_image_path, crop_ratio)
-            image_path = cropped_image_path
-        else:
-            print(f"Document type '{doc_type}' does not require cropping. Skipping cropping step.")
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Crop the image if needed
+            if doc_type in ["surat_keluar", "surat_masuk"]:
+                temp_cropped_image_path = os.path.join(temp_dir, "cropped_image.jpg")
+                crop_image_body(image_path, temp_cropped_image_path, crop_ratio)
+                image_path = temp_cropped_image_path
 
-        # Preprocess the image
-        preprocessed_image = preprocess_image(image_path, method=preprocessing_method, remove_lines=remove_lines)
-        preprocessed_image_path = image_path.replace(".jpg", "_preprocessed.jpg")
-        cv2.imwrite(preprocessed_image_path, preprocessed_image)
+            # Preprocess the image
+            preprocessed_image = preprocess_image(image_path, method=preprocessing_method, remove_lines=remove_lines)
 
-        # Perform OCR
-        text = pytesseract.image_to_string(Image.fromarray(preprocessed_image))
-        return text
+            # Perform OCR
+            text = pytesseract.image_to_string(Image.fromarray(preprocessed_image))
+
+            # Clean up temporary directory automatically
+            return text
 
     except Exception as e:
         print(f"Error processing image {image_path}: {e}")
         return ""
 
-def preprocess_pdf_and_extract_text(pdf_path: str, output_folder: str, crop_ratio: float = 0.2, doc_type: str = "unknown", preprocessing_method: str = "trunc", remove_lines: bool = False):
+def preprocess_pdf_and_extract_text(pdf_path: str, crop_ratio: float = 0.1, doc_type: str = "unknown", preprocessing_method: str = "trunc", remove_lines: bool = False):
     """
     Full pipeline: Convert PDF to images, conditionally crop body, preprocess images, and extract text via OCR.
 
     Args:
         pdf_path (str): Path to the input PDF file.
-        output_folder (str): Directory to save intermediate and output files.
         crop_ratio (float): Ratio of the image height to crop from the top.
         doc_type (str): Type of the document to conditionally apply cropping.
         preprocessing_method (str): Image preprocessing method to apply before OCR.
@@ -110,6 +86,7 @@ def preprocess_pdf_and_extract_text(pdf_path: str, output_folder: str, crop_rati
     Returns:
         str: Extracted text from the entire PDF.
     """
+    # Convert PDF to PIL images
     images = convert_from_path(pdf_path)
 
     # Modify page selection based on doc_type
@@ -119,25 +96,27 @@ def preprocess_pdf_and_extract_text(pdf_path: str, output_folder: str, crop_rati
     elif total_pages > 15:  # Default behavior for other document types
         images = images[:5] + images[-5:]
 
-    image_paths = []
-    for i, image in enumerate(images):
-        image_path = os.path.join(output_folder, f"page_{i + 1}.jpg")
-        image.save(image_path, "JPEG")
-        image_paths.append(image_path)
+    # Temporary directory for intermediate image files
+    with tempfile.TemporaryDirectory() as temp_dir:
+        image_paths = []
+        for i, image in enumerate(images):
+            temp_image_path = os.path.join(temp_dir, f"page_{i + 1}.jpg")
+            image.save(temp_image_path, "JPEG")
+            image_paths.append(temp_image_path)
 
-    # Parallel processing with limited workers
-    full_text = ""
-    with ProcessPoolExecutor(max_workers=min(4, multiprocessing.cpu_count())) as executor:
-        results = executor.map(
-            process_image,
-            image_paths,
-            [crop_ratio] * len(image_paths),
-            [doc_type] * len(image_paths),
-            [preprocessing_method] * len(image_paths),
-            [remove_lines] * len(image_paths)
-        )
-        for text in results:
-            full_text += text + "\n"
+        # Parallel processing with limited workers
+        full_text = ""
+        with ProcessPoolExecutor(max_workers=min(4, multiprocessing.cpu_count())) as executor:
+            results = executor.map(
+                process_image,
+                image_paths,
+                [crop_ratio] * len(image_paths),
+                [doc_type] * len(image_paths),
+                [preprocessing_method] * len(image_paths),
+                [remove_lines] * len(image_paths)
+            )
+            for text in results:
+                full_text += text + "\n"
 
     return full_text
 

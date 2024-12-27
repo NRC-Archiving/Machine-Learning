@@ -48,7 +48,6 @@ def extract_document():
         # Extract text from the PDF
         extracted_text = preprocess_pdf_and_extract_text(
             pdf_path=file_path,
-            output_folder=output_folder,
             crop_ratio=crop_ratio,
             doc_type=doc_type,
             preprocessing_method=preprocessing_method,

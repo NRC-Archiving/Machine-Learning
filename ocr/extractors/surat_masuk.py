@@ -6,29 +6,41 @@ def extract_surat_masuk(text):
     Ekstrak data dari dokumen surat masuk.
     """
     patterns = {
-        "tanggal": r"Tanggal\s*:\s*(\d{1,2})\s(\w+)\s(\d{4})",
-        "nomor": r"No\.\s*:\s*([^\s]+)",
-        "pengirim": r"Hormat\sKami,\s*([^\n]+)",
-        "perihal": r"Perihal\s*:\s*(.*)"
+        "tanggal": r"\b([A-Z][a-z]*(?: [A-Z][a-z]*)?),\s*(\d{1,2} [A-Z][a-z]+ \d{4})",
+        "nomor": r"Nomor\s*[:;]([^\s]+)|[Nn]o[.:]\s*([^\s]+)",
+        "pengirim": r"Hormat Kami,\s*([^\n]+)",
+        "perihal": r"Hal\s*:\s*(.*)|Perihal\s*:\s*(.*)"
     }
 
     try:
-        hasil = {"document_type": "surat_masuk"}
-
+        hasil = {}
         # Tanggal
         tanggal_match = re.search(patterns["tanggal"], text)
         if tanggal_match:
-            day, month_name, year = tanggal_match.groups()
-            hasil["tanggal"] = parse_date(day, month_name, year).strftime("%d-%m-%Y")
+            _, date_str = tanggal_match.groups()
+            try:
+                parsed_date = parse_date(date_str)
+                hasil["tanggal"] = parsed_date.strftime("%d-%m-%Y")
+            except ValueError as e:
+                hasil["tanggal"] = f"Error parsing date: {str(e)}"
+        else:
+            hasil["tanggal"] = "N/A"
+        print(hasil["tanggal"])
 
         # Nomor
-        hasil["nomor"] = re.search(patterns["nomor"], text).group(1).strip() if re.search(patterns["nomor"], text) else "N/A"
+        nomor_match = re.search(patterns["nomor"], text)
+        hasil["nomor"] = nomor_match.group(1) or nomor_match.group(2) if nomor_match else "N/A"
+        print(hasil["nomor"])
 
         # Pengirim
-        hasil["pengirim"] = re.search(patterns["pengirim"], text).group(1).strip() if re.search(patterns["pengirim"], text) else "N/A"
-
+        pengirim_match = re.search(patterns["pengirim"], text)
+        hasil["pengirim"] = pengirim_match.group(1) if pengirim_match else "N/A"
+        print(hasil["pengirim"])
+        
         # Perihal
-        hasil["perihal"] = re.search(patterns["perihal"], text).group(1).strip() if re.search(patterns["perihal"], text) else "N/A"
+        perihal_match = re.search(patterns["perihal"], text)
+        hasil["perihal"] = perihal_match.group(1) or perihal_match.group(2) if perihal_match else "N/A"
+        print(hasil["perihal"])
 
         return hasil
     except Exception as e:

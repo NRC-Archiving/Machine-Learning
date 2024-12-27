@@ -4,8 +4,8 @@ from extractors.utils import parse_date
 def extract_surat_keluar(text):
     patterns = {
         "tanggal": r"\b([A-Z][a-z]*(?: [A-Z][a-z]*)?),\s*(\d{1,2} [A-Z][a-z]+ \d{4})",
-        "nomor": r"[Nn]o[.:]\s*([^\s]+)",
-        "perihal": r"(?i)surat\spernyataan\s*(.*?)\n|[Pp]eri[t]hal\s*[:;=_]\s*([^\n]+)"
+        "nomor": r"Nomor\s*[:;]([^\s]+)|[Nn]o[.:]\s*([^\s]+)",
+        "perihal": r"(?i)surat\spernyataan\s*(.*?)\n|[Pp]erihal\s*[:;=_]\s*([^\n]+)"
     }
 
     # Extract values based on patterns
@@ -26,7 +26,7 @@ def extract_surat_keluar(text):
 
         # Process "nomor"
         nomor_match = re.search(patterns["nomor"], text)
-        hasil["nomor"] = nomor_match.group(1) if nomor_match else "N/A"
+        hasil["nomor"] = nomor_match.group(1) or nomor_match.group(2) if nomor_match else "N/A"
 
         # Process "perihal"
         perihal_match = re.search(patterns["perihal"], text)
