@@ -3,74 +3,64 @@ import numpy as np
 from pdf2image import convert_from_path
 from pytesseract import image_to_string
 from PIL import Image
-from concurrent.futures import ThreadPoolExecutor
-import asyncio
+import os
+import multiprocessing  # ✅ Multi-Processing for Preprocessing
+import concurrent.futures  # ✅ Multi-Threading for OCR Extraction
 
-def preprocess_image(image, method="trunc"):
+# Import preprocessing modules
+from preprocessors.image_denoising import denoise_image
+from preprocessors.adaptive_thresholding import apply_adaptive_thresholding
+from preprocessors.deskewing import deskew_image
+from preprocessors.upscaling import upscale_image
+from preprocessors.crop_letterhead import crop_letterhead
+
+def preprocess_image(image, doc_type=None):
+    """Preprocesses a single image."""
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+    # Apply header cropping only on first page of "surat" documents
+    if doc_type in ["surat_masuk", "surat_keluar"]:
+        gray = crop_letterhead(gray)
+
+    # Apply preprocessing steps
+    upscaled = upscale_image(gray, scale=2)
+    denoised = denoise_image(upscaled)
+    thresholded = apply_adaptive_thresholding(denoised)
+    deskewed = deskew_image(thresholded)
+
+    return deskewed
+
+def ocr_extract(image):
+    """Runs OCR on a single image."""
+    return image_to_string(Image.fromarray(image))
+
+def extract_text_from_pdf(pdf_path, doc_type=None, dpi=300):
+    """Extracts text from a PDF file using hybrid optimization."""
     try:
-        if isinstance(image, str):  # If the input is a file path
-            image = cv2.imread(image)
-        else:  # If the input is a PIL image
-            image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+        images = convert_from_path(pdf_path, dpi=dpi)
+        temp_image_paths = []  # Store temp images for cleanup
 
-        # Convert to grayscale
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        # ✅ Step 1: Use Multi-Processing for Image Preprocessing
+        with multiprocessing.Pool(processes=os.cpu_count()) as pool:
+            processed_images = pool.starmap(preprocess_image, [(np.array(img), doc_type) for img in images])
 
-        # Apply preprocessing based on the method
-        if method == "trunc":
-            gray = cv2.threshold(gray, 127, 255, cv2.THRESH_TRUNC)[1]
+        # ✅ Step 2: Use Multi-Threading for OCR Extraction
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            extracted_texts = list(executor.map(ocr_extract, processed_images))
 
-        return gray
-    except Exception as e:
-        raise ValueError(f"Error during image preprocessing: {e}")
+        extracted_text = "\n\n".join(extracted_texts).strip()
 
-def ocr_image(image):
-    try:
-        # Convert OpenCV image to PIL format for OCR
-        pil_image = Image.fromarray(image)
-        text = image_to_string(pil_image)
-        return text.strip()
-    except Exception as e:
-        raise ValueError(f"Error during OCR: {e}")
-
-def convert_pdf_to_images(pdf_path, dpi=300):
-    try:
-        return convert_from_path(pdf_path, dpi=dpi)
-    except Exception as e:
-        raise ValueError(f"Error converting PDF to images: {e}")
-
-async def process_page_async(image, page_num, preprocessing_method="trunc"):
-    try:
-        processed_image = preprocess_image(image, preprocessing_method)
-        text = ocr_image(processed_image)
-        return f"--- Page {page_num + 1} ---\n{text}"
-    except Exception as e:
-        return f"--- Page {page_num + 1} ---\n[ERROR] {str(e)}"
-
-async def extract_text_from_pdf_async(pdf_path, dpi=300, preprocessing_method="trunc", doc_type=None):
-    try:
-        # Convert PDF to images
-        images = convert_pdf_to_images(pdf_path, dpi)
-
-        # Modify page selection based on doc_type
-        total_pages = len(images)
-        if doc_type == "keuangan":
-            images = images[:7]  # Limit to the first 7 pages
-        elif total_pages > 15:  # Default behavior for other document types
-            images = images[:7] + images[-7:]
-
-        # Process images concurrently
-        tasks = [
-            process_page_async(image, i, preprocessing_method)
-            for i, image in enumerate(images)
-        ]
-        results = await asyncio.gather(*tasks)
-        return "\n\n".join(results).strip()
     except Exception as e:
         raise ValueError(f"Error extracting text from PDF: {e}")
 
-def extract_text_from_pdf(pdf_path, dpi=300, preprocessing_method="trunc", doc_type=None):
-    try:
-        return asyncio.run(extract_text_from_pdf_async(pdf_path, dpi, preprocessing_method, doc_type))
-    except Exception as e:
-        raise ValueError(f"Error in synchronous extraction: {e}")
+    finally:
+        # ✅ Remove the uploaded PDF file
+        if os.path.exists(pdf_path):
+            os.remove(pdf_path)
+
+        # ✅ Remove all temporary images
+        for temp_image in temp_image_paths:
+            if os.path.exists(temp_image):
+                os.remove(temp_image)
+
+    return extracted_text
