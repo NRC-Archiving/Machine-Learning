@@ -15,8 +15,13 @@ from preprocessors.upscaling import upscale_image
 from preprocessors.crop_letterhead import crop_letterhead
 
 def preprocess_image(image, doc_type=None):
-    """Preprocesses a single image."""
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    """Preprocesses a single image while handling grayscale images correctly."""
+    
+    # ✅ Ensure image has 3 channels before converting to grayscale
+    if len(image.shape) == 2:  # Image is already grayscale
+        gray = image  
+    else:
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     # Apply header cropping only on first page of "surat" documents
     if doc_type in ["surat_masuk", "surat_keluar"]:
@@ -29,6 +34,7 @@ def preprocess_image(image, doc_type=None):
     deskewed = deskew_image(thresholded)
 
     return deskewed
+
 
 def ocr_extract(image):
     """Runs OCR on a single image."""
