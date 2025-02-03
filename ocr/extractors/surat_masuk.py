@@ -6,10 +6,10 @@ def extract_surat_masuk(text):
     Ekstrak data dari dokumen surat masuk.
     """
     patterns = {
-        "tanggal": r"Tanggal\s*:\s*(\d{1,2})\s(\w+)\s(\d{4})|\b([A-Z][a-z]+(?: [A-Z][a-z]+)?),\s*(\d{1,2})\s([A-Z][a-z]+)\s(\d{4})",
-        "nomor": r"No[mor]\.\s*:\s*([^\s]+)",
-        "pengirim": r"Hormat\sKami,\s*([^\n]+)",
-        "perihal": r"Perihal\s*:\s*(.*)"
+        "tanggal": r"Tanggal\s*:\s*(\d{1,2})\s(\w+)\s(\d{4})|\b([A-Z][a-z]+(?: [A-Z][a-z]+)?)\s*,?\s*(\d{1,2})\s([A-Z][a-z]+)\s(\d{4})",
+        "nomor": r"No(?:mor)?\.?\s*:\s*(.+)",
+        "pengirim": r"Hormat\s[kK]ami,\s*\n?(.+)",
+        "perihal": r"(?:Perihal|Hal\.?)\s*:\s*(.+)"
     }
 
     try:
