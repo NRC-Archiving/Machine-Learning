@@ -17,23 +17,40 @@ from preprocessors.crop_letterhead import crop_letterhead
 def preprocess_image(image, doc_type=None):
     """Preprocesses a single image while handling grayscale images correctly."""
     
-    # ✅ Ensure image has 3 channels before converting to grayscale
-    if len(image.shape) == 2:  # Image is already grayscale
-        gray = image  
-    else:
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-    # Apply header cropping only on first page of "surat" documents
-    if doc_type in ["surat_masuk", "surat_keluar"]:
-        gray = crop_letterhead(gray)
-
+    # ✅ Debugging: Print image properties before conversion
+    print(f"Before preprocessing - Type: {type(image)}, Shape: {image.shape if hasattr(image, 'shape') else 'No Shape'}")
+    
     # Apply preprocessing steps
-    upscaled = upscale_image(gray, scale=2)
-    denoised = denoise_image(upscaled)
-    thresholded = apply_adaptive_thresholding(denoised)
-    deskewed = deskew_image(thresholded)
-
-    return deskewed
+    image = denoise_image(image)
+    print(f"After denoising - Shape: {image.shape}")
+    
+    # ✅ Convert to grayscale before thresholding
+    if len(image.shape) == 3:
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    print(f"Before thresholding (Grayscale) - Shape: {image.shape}")
+    
+    image = apply_adaptive_thresholding(image)
+    print(f"After thresholding - Shape: {image.shape}")
+    
+    image = deskew_image(image)
+    print(f"After deskewing - Shape: {image.shape}")
+    image = upscale_image(image)
+    print(f"After upscaling - Shape: {image.shape}")
+    
+    # ✅ Fix: Ensure image remains 3-channel after upscaling
+    if len(image.shape) == 2:  # If still grayscale, convert to BGR
+        image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
+    print(f"After fixing channels post-upscaling - Shape: {image.shape}")
+    
+    image = crop_letterhead(image)
+    print(f"After cropping - Shape: {image.shape}")
+    
+    # ✅ Ensure final image is in grayscale before returning
+    if len(image.shape) == 3:
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    
+    print(f"Final grayscale image - Shape: {image.shape}")
+    return image
 
 
 def ocr_extract(image):
@@ -54,7 +71,7 @@ def extract_text_from_pdf(pdf_path, doc_type=None, dpi=300):
         with concurrent.futures.ThreadPoolExecutor() as executor:
             extracted_texts = list(executor.map(ocr_extract, processed_images))
 
-        extracted_text = "\n\n".join(extracted_texts).strip()
+        text = "\n\n".join(extracted_texts).strip()
 
     except Exception as e:
         raise ValueError(f"Error extracting text from PDF: {e}")
@@ -69,4 +86,7 @@ def extract_text_from_pdf(pdf_path, doc_type=None, dpi=300):
             if os.path.exists(temp_image):
                 os.remove(temp_image)
 
-    return extracted_text
+    print(text)
+    return text
+
+
