@@ -9,7 +9,7 @@ def crop_letterhead(image):
     """
 
     height, width = image.shape[:2]
-    min_remaining_height = int(height * 0.95)  # Ensure at least 90% of the document remains
+    min_remaining_height = int(height * 0.90)  # Ensure at least 90% of the document remains
     safe_margin = int(height * 0.05)  # Fixed safe margin (5%)
     
     # Convert to grayscale
