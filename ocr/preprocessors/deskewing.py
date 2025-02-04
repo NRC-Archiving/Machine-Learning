@@ -36,6 +36,6 @@ def deskew_image(image, angle_threshold=1.5):
     rotated = cv2.warpAffine(image, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
 
     end_time = time.time()  # End time tracking
-    print(f"Time elapsed in deskewing.py: {end_time - start_time:.4f} seconds")
+    print(f"Deskewing time: {end_time - start_time:.4f} seconds")
 
     return rotated
