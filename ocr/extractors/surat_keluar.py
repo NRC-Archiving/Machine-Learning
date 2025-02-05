@@ -4,8 +4,8 @@ from extractors.utils import parse_date
 def extract_surat_keluar(text):
     patterns = {
         "tanggal": r"\b([A-Z][a-z]*(?: [A-Z][a-z]*)?),\s*(\d{1,2} [A-Z][a-z]+ \d{4})",
-        "nomor": r"[Nn]o[.:]\s*([^\s]+)",
-        "perihal": r"(?i)surat\spernyataan\s*(.*?)\n|[Pp]erihal\s*:\s*([^\s]+)"
+        "nomor": r"No(?:mor)?\.?\s*:\s*(.+)",
+        "perihal": r"(?i)surat\spernyataan\s*(.*?)\n|(?:Perihal|Hal\.?)\s*:\s*(.+)"
     }
 
     # Extract values based on patterns
