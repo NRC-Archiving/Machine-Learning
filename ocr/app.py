@@ -14,6 +14,20 @@ from extractors import (
 )
 import asyncio
 
+# Load env
+from dotenv import load_dotenv
+load_dotenv()
+host = os.getenv('HOST_SERVER')
+port = os.getenv('PORT_SERVER')
+brokers = os.getenv('BROKERS')
+
+# Initialize Kafka broker
+from kafka_prod import KafkaProducerClient
+kafka_client = KafkaProducerClient(
+    bootstrap_servers=[brokers],
+    topic="test-topic"
+)
+
 # Initialize Flask
 app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
@@ -30,6 +44,7 @@ def allowed_file(filename):
 @app.route('/extract', methods=['POST'])
 def extract_document():
     doc_type = request.form.get('doc_type', 'unknown')
+    doc_id = request.form.get('doc_id', 'none')
     file = request.files.get('file')
 
     if not file or not allowed_file(file.filename):
@@ -70,6 +85,10 @@ def extract_document():
         # Cleanup the uploaded file
         if os.path.exists(file_path):
             os.remove(file_path)
+    
+    # Send result to message broker
+    data = { "doc_id": doc_id, "doc_type": doc_type, "result": result }
+    kafka_client.send_result(True, data)
 
     return jsonify(result)
 
@@ -115,8 +134,11 @@ async def extract_document_async():
         # Cleanup the uploaded file
         if os.path.exists(file_path):
             os.remove(file_path)
+    
+    # Send result to message broker
+    kafka_client.send_result(True, result)
 
     return jsonify(result)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host=host, port=port, debug=True)

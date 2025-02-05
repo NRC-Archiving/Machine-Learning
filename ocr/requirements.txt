@@ -1,6 +1,10 @@
 flask[async]
 pdf2image
 pytesseract
+python-dateutil
+python-dotenv
 pillow
 opencv-python
+kafka-python
 werkzeug
+
