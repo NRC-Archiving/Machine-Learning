@@ -20,8 +20,7 @@ from preprocessors.crop_letterhead import crop_letterhead
 def preprocess_image(image, doc_type=None):
     """Preprocesses a single image while ensuring it remains grayscale throughout."""
     start_time = time.time()
-    print(f"Before preprocessing - Type: {type(image)}, Shape: {image.shape if hasattr(image, 'shape') else 'No Shape'}")
-
+    
     # Step 1: Background Removal (Only for specific document types)
     if doc_type in ["tenaga_ahli", "legalitas"]:
         image = remove_background(image)
@@ -31,49 +30,37 @@ def preprocess_image(image, doc_type=None):
         image = apply_adaptive_thresholding(image)
         return image
     
-    # Step 2: Convert to grayscale (Ensuring consistency)
+    # Step 2: Convert to grayscale
     if len(image.shape) == 3:
         image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-    print(f"Converted to grayscale - Shape: {image.shape}")
     
     # If document type is "cv", only perform grayscale and upscaling, then return
     if doc_type in ["cv", "pengurus"]:
-        #image = deskew_image(image)
-        #image = upscale_image(image)
-        print(f"After upscaling - Shape: {image.shape}")
-        return image  # Skip other preprocessing steps
+        return image  
 
     # Step 3: Enhance Contrast
     image = enhance_contrast(image)
-    print(f"After contrast enhancement - Shape: {image.shape}")
 
     # Step 4: Reduce Noise
     image = denoise_image(image)
-    print(f"After denoising - Shape: {image.shape}")
 
     # Step 5: Apply Adaptive Thresholding (Binarization)
     image = apply_adaptive_thresholding(image, method="mean")
-    print(f"After thresholding - Shape: {image.shape}")
 
     # Step 6: Deskewing
     image = deskew_image(image)
-    print(f"After deskewing - Shape: {image.shape}")
 
     # Step 7: Upscaling
     image = upscale_image(image)
-    print(f"After upscaling - Shape: {image.shape}")
 
     # Step 8: Crop Letterhead (Only for `surat_masuk` & `surat_keluar`)
     if doc_type in ["surat_masuk", "surat_keluar"]:
         image = crop_letterhead(image)
-        print(f"After cropping - Shape: {image.shape}")
 
     # Ensure final image is grayscale before returning
     if len(image.shape) == 3:
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    print(f"Final grayscale image - Shape: {image.shape}")
-    print(f'Full preprocessing time: {time.time() - start_time:.4f} seconds')
     return image
 
 
@@ -82,11 +69,11 @@ def ocr_extract(image):
     return image_to_string(Image.fromarray(image))
 
 
-def extract_text_from_pdf(pdf_path, doc_type=None, dpi=300):
-    """Extracts text from a PDF file using multi-processing & multi-threading."""
+def extract_text_from_pdf(pdf_path, doc_type=None, dpi=200):
+    """Extracts text from a PDF file using multi-processing & multi-threading, limited to first two pages."""
     try:
-        # ✅ Step 1: Convert PDF to images
-        images = convert_from_path(pdf_path, dpi=dpi)
+        # ✅ Step 1: Convert PDF to images (only first 2 pages)
+        images = convert_from_path(pdf_path, dpi=dpi, first_page=1, last_page=2)
         if not images:
             raise ValueError("No images were extracted from the PDF.")
 
