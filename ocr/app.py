@@ -14,19 +14,19 @@ from extractors import (
 )
 import asyncio
 
-# Load env
-from dotenv import load_dotenv
-load_dotenv()
-host = os.getenv('HOST_SERVER')
-port = os.getenv('PORT_SERVER')
-brokers = os.getenv('BROKERS')
+# # Load env
+# from dotenv import load_dotenv
+# load_dotenv()
+# host = os.getenv('HOST_SERVER')
+# port = os.getenv('PORT_SERVER')
+# brokers = os.getenv('BROKERS')
 
-# Initialize Kafka broker
-from kafka_prod import KafkaProducerClient
-kafka_client = KafkaProducerClient(
-    bootstrap_servers=[brokers],
-    topic="test-topic"
-)
+# # Initialize Kafka broker
+# from kafka_prod import KafkaProducerClient
+# kafka_client = KafkaProducerClient(
+#     bootstrap_servers=[brokers],
+#     topic="test-topic"
+# )
 
 # Initialize Flask
 app = Flask(__name__)
@@ -65,8 +65,8 @@ def extract_document():
             "keuangan": extract_keuangan,
             "surat_masuk": extract_surat_masuk,
             "surat_keluar": extract_surat_keluar,
-            "pengurus": extract_pengurus_pemegang_saham,
-            "pemegang_saham": extract_pengurus_pemegang_saham
+            "pengurus": lambda text: extract_pengurus_pemegang_saham(text, doc_type="pengurus"),
+            "pemegang_saham": lambda text: extract_pengurus_pemegang_saham(text, doc_type="pemegang_saham")
         }
 
         # ✅ Use the appropriate extractor for the document type
@@ -83,11 +83,11 @@ def extract_document():
         if os.path.exists(file_path):
             os.remove(file_path)
     
-    # Send result to message broker
-    data = { "doc_id": doc_id, "doc_type": doc_type, "result": result }
-    kafka_client.send_result(True, data)
+    # # Send result to message broker
+    # data = { "doc_id": doc_id, "doc_type": doc_type, "result": result }
+    # kafka_client.send_result(True, data)
 
     return jsonify(result)
 
 if __name__ == '__main__':
-    app.run(host=host, port=port, debug=True)
+    app.run(debug=True)

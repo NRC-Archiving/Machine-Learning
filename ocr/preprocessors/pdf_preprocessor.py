@@ -26,10 +26,22 @@ def preprocess_image(image, doc_type=None):
     if doc_type in ["tenaga_ahli", "legalitas"]:
         image = remove_background(image)
 
+    if doc_type in ["pengurus", "pemegang_saham"]:
+        image = remove_background(image)
+        image = apply_adaptive_thresholding(image)
+        return image
+    
     # Step 2: Convert to grayscale (Ensuring consistency)
     if len(image.shape) == 3:
         image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     print(f"Converted to grayscale - Shape: {image.shape}")
+    
+    # If document type is "cv", only perform grayscale and upscaling, then return
+    if doc_type in ["cv", "pengurus"]:
+        #image = deskew_image(image)
+        #image = upscale_image(image)
+        print(f"After upscaling - Shape: {image.shape}")
+        return image  # Skip other preprocessing steps
 
     # Step 3: Enhance Contrast
     image = enhance_contrast(image)
@@ -40,7 +52,7 @@ def preprocess_image(image, doc_type=None):
     print(f"After denoising - Shape: {image.shape}")
 
     # Step 5: Apply Adaptive Thresholding (Binarization)
-    image = apply_adaptive_thresholding(image, method="mean", block_size=11, C=2)
+    image = apply_adaptive_thresholding(image, method="mean")
     print(f"After thresholding - Shape: {image.shape}")
 
     # Step 6: Deskewing
@@ -108,7 +120,7 @@ def extract_text_from_pdf(pdf_path, doc_type=None, dpi=300):
             extracted_texts = list(executor.map(ocr_extract, processed_images))
 
         text = "\n\n".join(extracted_texts).strip()
-        text = text.replace(';', ':').replace('=', ':')
+        text = text.replace(';', ':').replace('=', ':').replace('>', ':').replace('|','I').replace('!','1')
 
     except Exception as e:
         raise ValueError(f"Error extracting text from PDF: {e}")

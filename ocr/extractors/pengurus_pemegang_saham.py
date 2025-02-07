@@ -1,12 +1,11 @@
 import re
 
-def extract_pengurus_pemegang_saham(text):
+def extract_pengurus_pemegang_saham(text="text", doc_type="pengurus"):
     patterns = {
         "nama": r"NPWP\s*:\s*\d{2}\.\d{3}\.\d{3}\.\d-\d{3}\.\d{3}\s*\n(.+)",
         "npwp": r"NPWP\s*:\s*(\d{2}\.\d{3}\.\d{3}\.\d-\d{3}\.\d{3})",
         "nik": r"NIK\s*[:|;|=]\s*(\d{16})",
-        "kota": r"(?i)PROVINSI.*\n(.*)",
-        "alamat": r"Alamat\s*:\s*(.*?)(?=\n\n|$)"
+        "alamat": r"NIK\s*[:|;|=]\s*\d{16}\s*-?\s*\n(.*?)(?=\n\n|$)"
     }
 
     try:
@@ -20,28 +19,18 @@ def extract_pengurus_pemegang_saham(text):
         npwp_match = re.search(patterns["npwp"], text)
         hasil["npwp"] = npwp_match.group(1).strip() if npwp_match else "N/A"
 
-        # Ekstraksi NIK
-        nik_match = re.search(patterns["nik"], text)
-        hasil["nik"] = nik_match.group(1).strip() if nik_match else "N/A"
+        # Ekstraksi NIK hanya jika jenis dokumen berupa pengurus
+        if doc_type == "pengurus":
+            nik_match = re.search(patterns["nik"], text)
+            hasil["nik"] = nik_match.group(1).strip() if nik_match else "N/A"
 
-        # Ekstraksi alamat
+        # Extract Address (All lines after NIK)
         alamat_match = re.search(patterns["alamat"], text, re.DOTALL)
         if alamat_match:
-            alamat_lines = alamat_match.group(1).split("\n")
-            alamat = ", ".join([line.strip() for line in alamat_lines if line.strip()])
+            alamat_lines = alamat_match.group(1).strip().split("\n")
+            hasil["alamat"] = ", ".join([line.strip() for line in alamat_lines if line.strip()])
         else:
-            alamat = "N/A"
-
-        # Ekstraksi kota (internal only)
-        kota_match = re.search(patterns["kota"], text)
-        kota = kota_match.group(1).strip() if kota_match else "N/A"
-
-        # Combine kota into alamat directly
-        if alamat != "N/A" and kota != "N/A":
-            alamat = f"{alamat}, {kota}"
-
-        # Save the final alamat into the result
-        hasil["alamat"] = alamat
+            hasil["alamat"] = "N/A"
 
         return hasil
     except Exception as e:

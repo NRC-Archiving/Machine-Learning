@@ -16,7 +16,7 @@ def fast_denoise(image, downscale_factor=2):
     small_image = cv2.resize(image, (width // downscale_factor, height // downscale_factor), interpolation=cv2.INTER_LINEAR)
 
     # Step 2: Apply fast denoising (lower strength to preserve text)
-    denoised_small = cv2.fastNlMeansDenoising(small_image, None, h=5, templateWindowSize=5, searchWindowSize=15)
+    denoised_small = cv2.fastNlMeansDenoising(small_image, None, h=3, templateWindowSize=7, searchWindowSize=21)
 
     # Step 3: Apply Bilateral Filtering (to preserve edges)
     denoised_small = cv2.bilateralFilter(denoised_small, d=9, sigmaColor=75, sigmaSpace=75)

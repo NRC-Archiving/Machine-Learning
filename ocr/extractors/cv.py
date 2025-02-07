@@ -12,7 +12,7 @@ def extract_cv(text):
         "ttl": r"Lahir\s*:\s*(.*?)(?=\n|$)",
         "education": r"Pendidikan\s*:\s*(.*?)\n(?:\s*(.*?)\s-\s(\d{4}))*",
         "degree_year": r"(\D+)\s-\s(\d{4})",
-        "experience": r"(\w+\s\d{4})\s*-\s*(Sekarang|Present)\s*([^\n]+)\n([^\n]*)"    
+        "experience": r"(\w+\s\d{4})\s*-\s*(Sekarang|Present)\s*\n*\s*([^\n]+)\s*\n*\s*(Proyek[^\n]*)"
         }
 
     try:
@@ -50,28 +50,27 @@ def extract_cv(text):
         else:
             results["education"] = []
 
-        # Extract the entry with "Sekarang" or "Present"
+        # Cari pengalaman terbaru yang memiliki "Sekarang" atau "Present"
         match = re.search(patterns["experience"], text, re.DOTALL)
         if match:
-            start_date_str, end_date_str, role, project_line = match.groups()
+            start_date_str, end_date_str, role, project_title = match.groups()
             try:
-                # Parse start date
+                # Konversi tanggal mulai
                 start_date = parse_date(start_date_str).strftime("%Y-%m-%d")
-
-                # Assign "Present" as the end date
                 end_date = "Present"
 
-                # Construct the latest experience result
+                # Simpan hanya judul proyek utama
                 latest_experience = {
                     "start_date": start_date,
                     "end_date": end_date,
                     "role": role.strip(),
-                    "project": project_line.strip() if project_line else "N/A"
+                    "project": project_title.strip()
                 }
             except Exception as exp_err:
                 raise RuntimeError(f"Error parsing experience entry: {exp_err}")
         else:
-            latest_experience = None  # No match found
+            latest_experience = None  # Tidak ditemukan pengalaman terbaru
+
             
         # Assign the result
         results["latest_experience"] = latest_experience
