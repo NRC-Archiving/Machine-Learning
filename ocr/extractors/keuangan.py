@@ -9,7 +9,7 @@ def extract_keuangan(text):
     patterns = {
         "tanggal": r"Printed\s*On\s*:\s*(\d{2}-\w{3}-\d{4})|Tanggal\s*Pen[vy]ampaian\s*:\s*(\d{2}/\d{2}/\d{4})|/\s*([A-Za-z]+\s+\d{1,2},\s+\d{4})|Tanggal\s*:\s*(\d{2}\s*\w+\s*\d{4})",
         "periode": r"FROM\s*:\s*(\d{4})|Tahun\s*Pajak\s*:\s*(\d{4})|yang\s*Berakhir\s*pada\s*.*?(\d{4})|sampai\s*dengan\s*tanggal\s*(\d{4})",
-        "nomor":   r"(?:Nomor/Number\s?:)\s?([^\s]+)|(?:Nomor\sTanda\sTerima\sElektronik\s?:)\s?([\d/-]+)|(?:Nomor\s?:)\s?([^\s]+)"
+        "nomor": r"(?:Subsidiary\s+No\.?\s?)([\dA-Za-z/-]+)|(?:Nomor/Number\s?:)\s?([^\s]+)|(?:Nomor\sTanda\sTerima\sElektronik\s?:)\s?([\d/-]+)|(?:Nomor\s?:)\s?([^\s]+)"
     }
 
     hasil = {}
