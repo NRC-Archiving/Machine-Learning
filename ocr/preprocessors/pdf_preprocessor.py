@@ -36,6 +36,9 @@ def preprocess_image(image, doc_type=None):
     
     # For CV and Pengurus only need 
     if doc_type in ["cv"]:
+        image = enhance_contrast(image)
+        image = apply_adaptive_thresholding(image, method='trunc')
+        image = upscale_image(image)
         return image  
 
     # Step 3: Enhance Contrast
