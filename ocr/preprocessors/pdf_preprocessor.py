@@ -69,7 +69,7 @@ def preprocess_image(image, doc_type=None):
 
 def ocr_extract(image):
     """Runs OCR on a single grayscale image."""
-    return image_to_string(Image.fromarray(image))
+    return image_to_string(Image.fromarray(image), config='--psm 4')
 
 
 def extract_text_from_pdf(pdf_path, doc_type=None, dpi=300):
