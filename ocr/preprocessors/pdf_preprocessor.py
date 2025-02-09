@@ -4,8 +4,8 @@ from pdf2image import convert_from_path
 from pytesseract import image_to_string
 from PIL import Image
 import os
-import multiprocessing  # ✅ Multi-Processing for Preprocessing
-import concurrent.futures  # ✅ Multi-Threading for OCR Extraction
+import multiprocessing  
+import concurrent.futures  
 import time
 
 # Import preprocessing modules
@@ -21,7 +21,7 @@ def preprocess_image(image, doc_type=None):
     """Preprocesses a single image while ensuring it remains grayscale throughout."""
     start_time = time.time()
     
-    # Step 1: Background Removal (Only for specific document types)
+    # Step 1 Background Removal for specific type of document
     if doc_type in ["tenaga_ahli", "legalitas"]:
         image = remove_background(image)
 
@@ -34,8 +34,8 @@ def preprocess_image(image, doc_type=None):
     if len(image.shape) == 3:
         image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     
-    # If document type is "cv", only perform grayscale and upscaling, then return
-    if doc_type in ["cv", "pengurus"]:
+    # For CV and Pengurus only need 
+    if doc_type in ["cv"]:
         return image  
 
     # Step 3: Enhance Contrast
@@ -53,11 +53,11 @@ def preprocess_image(image, doc_type=None):
     # Step 7: Upscaling
     image = upscale_image(image)
 
-    # Step 8: Crop Letterhead (Only for `surat_masuk` & `surat_keluar`)
+    # Additional step to crop letterhead from letter type document
     if doc_type in ["surat_masuk", "surat_keluar"]:
         image = crop_letterhead(image)
 
-    # Ensure final image is grayscale before returning
+    # Double check to ensure final image is grayscale before returning
     if len(image.shape) == 3:
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
@@ -69,15 +69,15 @@ def ocr_extract(image):
     return image_to_string(Image.fromarray(image))
 
 
-def extract_text_from_pdf(pdf_path, doc_type=None, dpi=200):
-    """Extracts text from a PDF file using multi-processing & multi-threading, limited to first two pages."""
+def extract_text_from_pdf(pdf_path, doc_type=None, dpi=300):
+    """Extracts text from a PDF file using multi-processing & multi-threading, limited to first three pages."""
     try:
-        # ✅ Step 1: Convert PDF to images (only first 2 pages)
-        images = convert_from_path(pdf_path, dpi=dpi, first_page=1, last_page=2)
+        # Step 1: Convert PDF to images (only first 3 pages)
+        images = convert_from_path(pdf_path, dpi=dpi, first_page=1, last_page=3)
         if not images:
             raise ValueError("No images were extracted from the PDF.")
 
-        # ✅ Step 2: Validate images before processing
+        # Step 2: Validate images before processing
         valid_images = []
         for img in images:
             try:
@@ -93,16 +93,16 @@ def extract_text_from_pdf(pdf_path, doc_type=None, dpi=200):
         if not valid_images:
             raise ValueError("No valid images available for processing.")
 
-        # ✅ Step 3: Use Multi-Processing for Image Preprocessing
+        # Step 3: Use Multi-Processing for Image Preprocessing
         with multiprocessing.Pool(processes=os.cpu_count()) as pool:
             processed_images = pool.starmap(preprocess_image, [(img, doc_type) for img in valid_images])
 
-        # ✅ Step 4: Validate Processed Images
+        # Step 4: Validate Processed Images
         processed_images = [img for img in processed_images if img is not None and img.size > 0]
         if not processed_images:
             raise ValueError("All images failed to process.")
 
-        # ✅ Step 5: Use Multi-Threading for OCR Extraction
+        # Step 5: Use Multi-Threading for OCR Extraction
         with concurrent.futures.ThreadPoolExecutor() as executor:
             extracted_texts = list(executor.map(ocr_extract, processed_images))
 
@@ -113,7 +113,7 @@ def extract_text_from_pdf(pdf_path, doc_type=None, dpi=200):
         raise ValueError(f"Error extracting text from PDF: {e}")
 
     finally:
-        # ✅ Remove the uploaded PDF file
+        # Remove the uploaded PDF file
         if os.path.exists(pdf_path):
             os.remove(pdf_path)
 
