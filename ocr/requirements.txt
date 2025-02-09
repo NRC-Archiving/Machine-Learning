@@ -7,4 +7,5 @@ pillow
 opencv-python
 kafka-python
 werkzeug
+scikit-learn
 
