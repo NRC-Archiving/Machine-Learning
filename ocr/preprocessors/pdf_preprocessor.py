@@ -68,9 +68,13 @@ def preprocess_image(image, doc_type=None):
 
 
 def ocr_extract(image, doc_type=None):
-    """Runs OCR on a single grayscale image with specific PSM mode for 'cv' documents."""
-    psm_mode = "4" if doc_type == "cv" else "7"  # Gunakan PSM 4 untuk CV, default ke PSM 7
-    return image_to_string(Image.fromarray(image), config=f"--psm {psm_mode}")
+    """Runs OCR on a single grayscale image, using --psm 4 only for 'cv' documents."""
+    config = "--psm 4" if doc_type == "cv" else None  # Gunakan None jika tidak ada config
+
+    if config:
+        return image_to_string(Image.fromarray(image), config=config)
+    else:
+        return image_to_string(Image.fromarray(image))  
 
 
 def extract_text_from_pdf(pdf_path, doc_type=None, dpi=300):
@@ -108,7 +112,7 @@ def extract_text_from_pdf(pdf_path, doc_type=None, dpi=300):
 
         # Step 5: Use Multi-Threading for OCR Extraction
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            extracted_texts = list(executor.map(lambda img: ocr_extract(img, doc_type), processed_images))
+            extracted_texts = list(executor.map(lambda img: ocr_extract(img, doc_type=doc_type), processed_images))
 
         text = "\n\n".join(extracted_texts).strip()
         text = text.replace(';', ':').replace('=', ':').replace('>', ':').replace('|','I').replace('!','1')
