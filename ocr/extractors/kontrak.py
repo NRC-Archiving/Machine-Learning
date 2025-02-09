@@ -4,7 +4,7 @@ from extractors.utils import parse_date
 def extract_kontrak(text):
     patterns = {
         "tanggal": r"(?:tanggal|hari)\s(?:\w+\s)?(\d{1,2})[-\s](\w+)[-\s](\d{4})",
-        "nomor_kontrak": r"(?:No\.?\s?:?|SURAT PERJANJIAN KERJA BORONGAN\s)([A-Za-z0-9/\-]+)",
+        "nomor_kontrak": r"(?:No\.?\s?:?|SURAT\s)([A-Za-z0-9/\-]+)",
         "nama_proyek": r"(?:PERIHAL\s?:?|Perihal\s?:?|Yang dimaksud dengan Pekerjaan dalam Perjanjian ini adalah)\s?([A-Za-z0-9\-/,(). ]+)",
         "pemberi_kerja": r"(?:Pemberi Tugas\s?:?|PIHAK I\s?:?)\s?(PT\.\s?[A-Za-z0-9., ]+)"
     }
