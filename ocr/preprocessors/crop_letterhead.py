@@ -22,11 +22,11 @@ def crop_letterhead(image):
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     max_y = 0
-    upper_region = int(height * 0.10)
+    upper_region = int(height * 0.05)
 
     for contour in contours:
         x, y, w, h = cv2.boundingRect(contour)
-        if y < upper_region and w > width * 0.8 and h > 30:
+        if y < upper_region and w > width * 0.6 and h > 10:
             max_y = max(max_y, y + h)
 
     if max_y > 0 and height - (max_y + safe_margin) > min_remaining_height:
