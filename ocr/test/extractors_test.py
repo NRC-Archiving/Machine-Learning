@@ -1,6 +1,6 @@
 import unittest
 import json
-from extractors.cv import extract_cv  # Import extractor function
+from extractors.cv import extract_cv
 from preprocessors.pdf_preprocessor import extract_text_from_pdf  # Import PDF preprocessor
 import os
 
@@ -9,7 +9,7 @@ class TestExtractorsTruthTable(unittest.TestCase):
         # Define test cases with expected results
         self.test_cases = [
             {
-                "pdf_path": "test_files/dummy_cv.pdf",  # Path to test PDF file
+                "pdf_path": "test/test_files/cv_sample.pdf",  # Path to test PDF file
                 "expected_output": {
                     "nama": "AGUS MUSLIM, Amd.",
                     "alamat": "Gedung Graha Cipta Lantai 2 JL. D.I Panjaitan No. 40 Jakarta - Timur 13350",
