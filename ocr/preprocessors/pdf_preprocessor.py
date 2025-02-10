@@ -25,9 +25,15 @@ def preprocess_image(image, doc_type=None):
     if doc_type in ["legalitas"]:
         image = remove_background(image)
 
-    if doc_type in ["pengurus", "pemegang_saham","tenaga_ahli"]:
+    if doc_type in ["pengurus", "pemegang_saham"]:
         image = remove_background(image)
         image = apply_adaptive_thresholding(image)
+        return image
+    
+    if doc_type in ["tenaga_ahli"]:
+        image = remove_background(image)
+        image = apply_adaptive_thresholding(image)
+        image = deskew_image(image)
         return image
     
     # Step 2: Convert to grayscale

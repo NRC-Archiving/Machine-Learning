@@ -7,9 +7,9 @@ def extract_tenaga_ahli(text):
        "terbit_date": r"(?im)(?:(?:^Tempat\b.*(?:\n|\Z))+)?^(?:Diterbitkan(?: pertama tanggal)?|Diberikan pertama kali pada|tanggal:?|Ditetapkan(?: di \w+)?|(?:[A-Z][a-z]+,))[,:\s]*(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})",
         "validity_date": r"sampai(?: dengan tanggal)? (\d{1,2})\s([A-Za-z]+)\s(\d{4})",
         "validity_years": r"berlaku (?:untuk|paling lama) (\d+)",
-        "nama": r"([A-Z\s.,\-]+)\nNa?\\?Reg\.",
-        "certificate_number": r"No\.\s(?:Reg|Kep)\.\s([\w/.-]+)|Reg\.\s*([A-Za-z0-9\s\-/.]+)(?=\n{1}[^\n])",
-        "competency": r"Competency:\s*([^\n]+)"
+        "nama": r"This is to certify that,\s*([^\n]+)|Nama\s*:\s*([^\n]+)",
+        "certificate_number": r"No\.\s(?:Reg|Kep)\.\s([\w/.-]+)|Reg\.|NOMOR\s*([A-Za-z0-9\s\-/.]+)(?=\n{1}[^\n])",
+        "competency": r"Competency:\s*([^\n]+)|requirements as\s*([^\n]+)"
     }
 
     hasil = {}
@@ -52,7 +52,11 @@ def extract_tenaga_ahli(text):
 
         # Extract nama
         nama_match = re.search(patterns["nama"], text)
-        hasil["nama"] = nama_match.group(1).strip() if nama_match else "N/A"
+        if nama_match:
+            hasil["nama"] = nama_match.group(1) or nama_match.group(2)
+            hasil["nama"]= hasil["nama"].strip() if nama_match else "N/A"
+        else:
+            hasil["nama"] = "N/A"
 
         # Extract certificate_number
         certificate_number_match = re.search(patterns["certificate_number"], text, re.MULTILINE)
@@ -64,8 +68,12 @@ def extract_tenaga_ahli(text):
 
         # Extract competency
         competency_match = re.search(patterns["competency"], text)
-        hasil["competency"] = competency_match.group(1).strip() if competency_match else "N/A"
-
+        if competency_match:
+            hasil["competency"] = competency_match.group(1) or competency_match.group(2) if competency_match else "N/A"
+            hasil["competency"] = hasil["competency"].strip() if hasil["competency"] else "N/A"
+        else:
+            hasil["competency"] = "N/A"
+            
     except Exception as e:
         hasil["error"] = f"Error processing tenaga ahli: {str(e)}"
     
