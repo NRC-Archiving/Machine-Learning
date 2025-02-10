@@ -22,10 +22,10 @@ def preprocess_image(image, doc_type=None):
     start_time = time.time()
     
     # Step 1 Background Removal for specific type of document
-    if doc_type in ["tenaga_ahli", "legalitas"]:
+    if doc_type in ["legalitas"]:
         image = remove_background(image)
 
-    if doc_type in ["pengurus", "pemegang_saham"]:
+    if doc_type in ["pengurus", "pemegang_saham","tenaga_ahli"]:
         image = remove_background(image)
         image = apply_adaptive_thresholding(image)
         return image
@@ -69,7 +69,7 @@ def preprocess_image(image, doc_type=None):
 
 def ocr_extract(image, doc_type=None):
     """Runs OCR on a single grayscale image, using --psm 4 only for 'cv' documents."""
-    config = "--psm 4" if doc_type == "cv" else None  # Gunakan None jika tidak ada config
+    config = "--psm 4" if doc_type == ["cv","tenaga_ahli"] else None  # Gunakan None jika tidak ada config
 
     if config:
         return image_to_string(Image.fromarray(image), config=config)
@@ -81,7 +81,7 @@ def extract_text_from_pdf(pdf_path, doc_type=None, dpi=300):
     """Extracts text from a PDF file using multi-processing & multi-threading, limited to first three pages."""
     try:
         # Step 1: Convert PDF to images (only first 3 pages)
-        images = convert_from_path(pdf_path, dpi=dpi, first_page=1, last_page=3)
+        images = convert_from_path(pdf_path, dpi=dpi, first_page=1, last_page=4)
         if not images:
             raise ValueError("No images were extracted from the PDF.")
 

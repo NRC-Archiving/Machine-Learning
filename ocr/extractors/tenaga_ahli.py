@@ -7,8 +7,8 @@ def extract_tenaga_ahli(text):
        "terbit_date": r"(?im)(?:(?:^Tempat\b.*(?:\n|\Z))+)?^(?:Diterbitkan(?: pertama tanggal)?|Diberikan pertama kali pada|tanggal:?|Ditetapkan(?: di \w+)?|(?:[A-Z][a-z]+,))[,:\s]*(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})",
         "validity_date": r"sampai(?: dengan tanggal)? (\d{1,2})\s([A-Za-z]+)\s(\d{4})",
         "validity_years": r"berlaku (?:untuk|paling lama) (\d+)",
-        "nama": r"This is to certify that,\s*([^\n]+)",
-        "certificate_number": r"No\.\s(?:Reg|Kep)\.\s([\w/.-]+)",
+        "nama": r"([A-Z\s.,\-]+)\nNa?\\?Reg\.",
+        "certificate_number": r"No\.\s(?:Reg|Kep)\.\s([\w/.-]+)|Reg\.\s*([A-Za-z0-9\s\-/.]+)(?=\n{1}[^\n])",
         "competency": r"Competency:\s*([^\n]+)"
     }
 
@@ -55,8 +55,12 @@ def extract_tenaga_ahli(text):
         hasil["nama"] = nama_match.group(1).strip() if nama_match else "N/A"
 
         # Extract certificate_number
-        certificate_number_match = re.search(patterns["certificate_number"], text)
-        hasil["certificate_number"] = certificate_number_match.group(1).strip() if certificate_number_match else "N/A"
+        certificate_number_match = re.search(patterns["certificate_number"], text, re.MULTILINE)
+        if certificate_number_match:
+            hasil["certificate_number"] = certificate_number_match.group(1) or certificate_number_match.group(2)
+            hasil["certificate_number"] = hasil["certificate_number"].strip() if hasil["certificate_number"] else "N/A"
+        else:
+            hasil["certificate_number"] = "N/A"
 
         # Extract competency
         competency_match = re.search(patterns["competency"], text)

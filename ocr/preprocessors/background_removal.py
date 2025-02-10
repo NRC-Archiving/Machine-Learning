@@ -24,7 +24,7 @@ def remove_background(image, k=2):
     pixel_values = np.float32(pixel_values)
 
     # Define K-means criteria & apply clustering
-    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 50, 0.2)
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 75, 0.2)
     _, labels, centers = cv2.kmeans(pixel_values, k, None, criteria, 5, cv2.KMEANS_RANDOM_CENTERS)
 
     # Convert centers to integer values
