@@ -1,6 +1,6 @@
 import re
 
-def extract_pengurus_pemegang_saham(text="text", doc_type="pengurus"):
+def extract_pengurus_pemegang_saham(text, doc_type="pengurus"):
     patterns = {
         "nama": r"NPWP\s*:\s*\d{2}\.\d{3}\.\d{3}\.\d-\d{3}\.\d{3}\s*\n(.+)",
         "npwp": r"NPWP\s*:\s*(\d{2}\.\d{3}\.\d{3}\.\d-\d{3}\.\d{3})",

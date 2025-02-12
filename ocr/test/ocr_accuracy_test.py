@@ -2,9 +2,15 @@ import os
 import sys
 import difflib
 import re
+import argparse
 from preprocessors.pdf_preprocessor import extract_text_from_pdf
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+
+# Argument parser for doc_type
+parser = argparse.ArgumentParser(description="Run OCR Accuracy Test with doc_type")
+parser.add_argument("--doc_type", type=str, required=True, help="Specify the document type")
+args = parser.parse_args()
 
 def compute_levenshtein_similarity(text1, text2):
     return difflib.SequenceMatcher(None, text1, text2).ratio()
@@ -19,14 +25,13 @@ def compute_cosine_similarity(text1, text2):
     vectorizer = TfidfVectorizer().fit_transform([text1, text2])
     return cosine_similarity(vectorizer[0], vectorizer[1])[0][0]
 
-def test_ocr_extraction(pdf_path, expected_txt_path):
+def test_ocr_extraction(pdf_path, expected_txt_path, doc_type):
     """
-    This test is performed on three different PDF types:
-    1. test_native.pdf  - A PDF generated from document conversion (ideal quality)
-    2. test_scan.pdf    - A high-quality scanned document
-    3. test_photo.pdf   - A scanned document using a phone camera (lower quality)
+    This test is performed on different PDF types:
+    - Native PDFs (ideal quality)
+    - Scanned documents (varying quality)
     """
-    extracted_text = extract_text_from_pdf(pdf_path)
+    extracted_text = extract_text_from_pdf(pdf_path, doc_type=doc_type)
     with open(expected_txt_path, 'r', encoding='utf-8') as f:
         expected_text = f.read()
     
@@ -41,13 +46,11 @@ def test_ocr_extraction(pdf_path, expected_txt_path):
 
 if __name__ == "__main__":
     test_files = [
-        ("test_native_cv.pdf", "test_native_cv.txt"),
-        ("test_scan_cv.pdf", "test_scan_cv.txt"),
-        ("test_photo_cv.pdf", "test_photo_cv.txt")
+        ("test/test_files/CV.pdf", "test/test_files/cv_sample.txt")
     ]
     
     for pdf, txt in test_files:
         if os.path.exists(pdf) and os.path.exists(txt):
-            test_ocr_extraction(pdf, txt)
+            test_ocr_extraction(pdf, txt, args.doc_type)
         else:
-            print(f"Skipping {pdf} - missing corresponding text file {txt}")
+            print(f"Skipping {pdf} or {txt}, file not found.")
