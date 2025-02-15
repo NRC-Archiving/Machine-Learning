@@ -1,6 +1,7 @@
 from flask import Flask, request, render_template, send_file, jsonify
-import pymupdf  # Importing pymupdf directly
+import pymupdf 
 from deep_translator import GoogleTranslator
+from deep_translator import MyMemoryTranslator
 import os
 
 # Initialize Flask app
@@ -8,7 +9,7 @@ app = Flask(__name__)
 
 # Define translator and color "white"
 WHITE = pymupdf.pdfcolor["white"]
-to_english = GoogleTranslator(source="id", target="en")
+to_english = MyMemoryTranslator(source="id-ID", target="en-US")
 
 # Route to display the HTML form for file upload
 @app.route('/')
