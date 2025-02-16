@@ -10,14 +10,14 @@ class KafkaProducerClient:
             bootstrap_servers = self.bootstrap_servers,
             value_serializer = self.serializer
         )
-        print("Kafka broker initialized")
+        print("Kafka Producer initialized")
     
     def send_result(self, success, result):
         message = {"success":success,"message":result}
         try:
             self.producer.send(self.topic, value=message)
             self.producer.flush()
-            print("Result sent to broker")
+            print(f"Message sent to broker: [topic: ${self.topic}]")
         except Exception as e:
             print(f"Error while sending message: {e}")
 
