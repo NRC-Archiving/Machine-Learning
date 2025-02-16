@@ -1,7 +1,8 @@
-from flask import Flask, request, render_template, send_file, jsonify
-import pymupdf 
+import threading
+import time
+from flask import Flask, request, render_template, send_file, jsonify, after_this_request
+import pymupdf
 from deep_translator import GoogleTranslator
-from deep_translator import MyMemoryTranslator
 import os
 import threading
 import time
@@ -48,14 +49,26 @@ app = Flask(__name__)
 
 # Define translator and color "white"
 WHITE = pymupdf.pdfcolor["white"]
-to_english = MyMemoryTranslator(source="id-ID", target="en-US")
+to_english = GoogleTranslator(source="id", target="en")
 
-# Route to display the HTML form for file upload
+def delayed_delete(*files, delay=5):
+    """Delete files after a delay to ensure they are no longer in use."""
+    def delete_files():
+        time.sleep(delay)  # Wait before attempting deletion
+        for file in files:
+            try:
+                if os.path.exists(file):
+                    os.remove(file)
+                    print(f"Deleted: {file}")
+            except Exception as e:
+                print(f"Error deleting {file}: {e}")
+    
+    threading.Thread(target=delete_files, daemon=True).start()
+
 @app.route('/')
 def index():
     return render_template('index.html')
 
-# Route to handle PDF upload and translation
 @app.route('/translate_pdf', methods=['POST'])
 def translate_pdf():
     requester_id = request.form.get('requester_id', 'unknown')
@@ -86,6 +99,7 @@ def translate_pdf():
 
     # Open the PDF with pymupdf
     try:
+        # Open the PDF with pymupdf
         doc = pymupdf.open(input_path)
         textflags = pymupdf.TEXT_DEHYPHENATE
 
@@ -147,7 +161,12 @@ def translate_pdf():
     finally:
         doc.close()
 
-    # Send the processed PDF file back to the client
+    # Schedule file deletion in a separate thread
+    @after_this_request
+    def remove_files(response):
+        delayed_delete(input_path, output_path, delay=5)  # Delete files after 5 seconds
+        return response
+
     return send_file(output_path, as_attachment=True)
 
 # Route to get translation status
@@ -177,6 +196,5 @@ def download_translated_pdf(req_id):
 
     return send_file(output_path, as_attachment=True)
 
-# Start Flask app
 if __name__ == '__main__':
     app.run(host=host, port=port, debug=True)
