@@ -13,9 +13,20 @@ ocr/venv-ml
 ocr/venv
 ocr/.env
 ocr/env
+NPL-Translation/venv
+NPL-Translation/.venv
+NPL-Translation/env
+NPL-Translation/.env
 
 # Ignore all files in the test_files directory
 tests/test_files/*
+
+# Ignore temp files
+NLP-Translation/temp/*.pdf
+NLP-Translation/input_document.pdf
+NLP-Translation/translated_document.pdf
+input_document.pdf
+translated_document.pdf
 
 # Allow a placeholder file to keep the directory structure
 !tests/test_files/.gitkeep

@@ -17,8 +17,8 @@ import asyncio
 # Load env
 from dotenv import load_dotenv
 load_dotenv()
-host = os.getenv('HOST_SERVER')
-port = os.getenv('PORT_SERVER')
+host = os.getenv('HOST_SERVER') or '127.0.0.1'
+port = os.getenv('PORT_SERVER') or 5000
 brokers = os.getenv('BROKERS')
 
 # Initialize Kafka broker
@@ -90,4 +90,4 @@ def extract_document():
     return jsonify(result)
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host=host, port=port, debug=True)
