@@ -1,5 +1,7 @@
 # Ignore Python bytecode files
 __pycache__/
+NLP-Translation/__pycache__/
+ocr/__pycache__/
 *.pyc
 *.pyo
 
@@ -8,15 +10,16 @@ __pycache__/
 venv/
 .env/
 env/
-ocr/.venv
 ocr/venv-ml
 ocr/venv
+ocr/.venv
 ocr/.env
 ocr/env
-NPL-Translation/venv
-NPL-Translation/.venv
-NPL-Translation/env
-NPL-Translation/.env
+NLP-Translation/venv-ml
+NLP-Translation/venv
+NLP-Translation/.venv
+NLP-Translation/.env
+NLP-Translation/env
 
 # Ignore all files in the test_files directory
 tests/test_files/*
