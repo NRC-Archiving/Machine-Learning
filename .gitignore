@@ -9,6 +9,7 @@ venv/
 .env/
 env/
 ocr/.venv
+ocr/venv-ml
 ocr/venv
 ocr/.env
 ocr/env

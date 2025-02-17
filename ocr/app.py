@@ -14,19 +14,19 @@ from extractors import (
 )
 import asyncio
 
-# # Load env
-# from dotenv import load_dotenv
-# load_dotenv()
-# host = os.getenv('HOST_SERVER')
-# port = os.getenv('PORT_SERVER')
-# brokers = os.getenv('BROKERS')
+# Load env
+from dotenv import load_dotenv
+load_dotenv()
+host = os.getenv('HOST_SERVER')
+port = os.getenv('PORT_SERVER')
+brokers = os.getenv('BROKERS')
 
-# # Initialize Kafka broker
-# from kafka_prod import KafkaProducerClient
-# kafka_client = KafkaProducerClient(
-#     bootstrap_servers=[brokers],
-#     topic="test-topic"
-# )
+# Initialize Kafka broker
+from kafka_prod import KafkaProducerClient
+kafka_client = KafkaProducerClient(
+    bootstrap_servers=[brokers],
+    topic="test-topic"
+)
 
 # Initialize Flask
 app = Flask(__name__)
@@ -83,9 +83,9 @@ def extract_document():
         if os.path.exists(file_path):
             os.remove(file_path)
     
-    # # Send result to message broker
-    # data = { "doc_id": doc_id, "doc_type": doc_type, "result": result }
-    # kafka_client.send_result(True, data)
+    # Send result to message broker
+    data = { "doc_id": doc_id, "doc_type": doc_type, "result": result }
+    kafka_client.send_result(True, data)
 
     return jsonify(result)
 
