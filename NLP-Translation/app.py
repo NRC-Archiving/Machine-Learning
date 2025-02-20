@@ -22,9 +22,10 @@ kafka_consumer_translation = KafkaConsumerClient(topic="translation_results", bo
 
 # Handle translation results with brokers
 translations = {}
-def handle_translation_results(data):
-    result = data.get("message")
+def handle_translation_results(broker_msg):
+    result = broker_msg.get("message")
     req_id = result.get("req_id")
+    requester_id = result.get("requester_id")
 
     if not req_id:
         print("Received message without req_id, ignoring...")
@@ -32,11 +33,11 @@ def handle_translation_results(data):
     
     if "error" in result:
         print("Error in translation request: ", result.get("error"))
-        translations[req_id] = {"status":"failed","error": result.get("error")}
+        translations[req_id] = {"status":"failed", "requester_id": requester_id, "error": result.get("error")}
         return
     else:
         print("Received translation result: id[", req_id, "]")
-        translations[req_id] = {"status":"completed", "output_path": result.get("output_path")}
+        translations[req_id] = {"status":"completed", "requester_id": requester_id, "output_path": result.get("output_path")}
         return
 kafka_consumer_translation.start_listening(handle_translation_results)
 
@@ -51,7 +52,7 @@ app = Flask(__name__)
 WHITE = pymupdf.pdfcolor["white"]
 to_english = GoogleTranslator(source="id", target="en")
 
-def delayed_delete(*files, delay=5):
+def delayed_delete(*files, req_id, delay=5):
     """Delete files after a delay to ensure they are no longer in use."""
     def delete_files():
         time.sleep(delay)  # Wait before attempting deletion
@@ -62,6 +63,13 @@ def delayed_delete(*files, delay=5):
                     print(f"Deleted: {file}")
             except Exception as e:
                 print(f"Error deleting {file}: {e}")
+        result = translations.get(req_id)
+
+        # change translated pdf status
+        if result["status"] == "completed":
+            result["status"] = "deleted"
+            result["output_path"] = "None"
+            translations[req_id] = result
     
     threading.Thread(target=delete_files, daemon=True).start()
 
@@ -96,6 +104,10 @@ def translate_pdf():
         "requester_id": requester_id,
         "filename": file.filename
     })
+    translations[req_id] = {
+        "status": "processing",
+        "requester_id": requester_id
+    }
 
     # Open the PDF with pymupdf
     try:
@@ -164,7 +176,7 @@ def translate_pdf():
     # Schedule file deletion in a separate thread
     @after_this_request
     def remove_files(response):
-        delayed_delete(input_path, output_path, delay=5)  # Delete files after 5 seconds
+        delayed_delete(input_path, output_path, req_id=req_id, delay=30)  # Delete files after 30 seconds
         return response
 
     return send_file(output_path, as_attachment=True)
@@ -175,12 +187,18 @@ def get_translation_status(req_id):
     result = translations.get(req_id)
 
     if not result:
-        return jsonify({"status": "pending"}), 200
-
+        return jsonify({"status": "not_found","error": "Request not found"}), 404
+    
     if result["status"] == "failed":
-        return jsonify({"status": "failed", "error": result["error"]}), 500
+        return jsonify({"status": "failed", "requester_id": result["requester_id"], "error": result["error"]}), 500
 
-    return jsonify({"status": "completed", "download_url": f"/translate_pdf/{req_id}"}), 200
+    if result["status"] == "processing":
+        return jsonify({"status": "pending", "requester_id": result["requester_id"]}), 200
+
+    if result["status"] == "deleted":
+        return jsonify({"status": "deleted", "requester_id": result["requester_id"]}), 200
+
+    return jsonify({"status": "completed", "requester_id": result["requester_id"], "download_url": f"/translate_pdf/{req_id}"}), 200
 
 # Route to download translated pdf
 @app.route('/translate_pdf/<req_id>', methods=['GET'])
