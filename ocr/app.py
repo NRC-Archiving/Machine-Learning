@@ -25,7 +25,7 @@ brokers = os.getenv('BROKERS') or 'localhost:9092'
 from kafka_prod import KafkaProducerClient
 kafka_client = KafkaProducerClient(
     bootstrap_servers=[brokers],
-    topic="test-topic"
+    topic="ocr_results"
 )
 
 # Initialize Flask

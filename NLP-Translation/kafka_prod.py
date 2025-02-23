@@ -15,7 +15,7 @@ class KafkaProducerClient:
         message = {"success":success,"message":result}
         try:
             self.producer.send(topic, value=message)
-            self.producer.flush()
+            self.producer.flush();
             print(f"Message sent to broker: [topic: ${topic}]")
         except Exception as e:
             print(f"Error while sending message: {e}")
