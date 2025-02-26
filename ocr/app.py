@@ -23,10 +23,7 @@ brokers = os.getenv('BROKERS') or 'localhost:9092'
 
 # Initialize Kafka broker
 from kafka_prod import KafkaProducerClient
-kafka_client = KafkaProducerClient(
-    bootstrap_servers=[brokers],
-    topic="ocr_results"
-)
+kafka_producer = KafkaProducerClient(bootstrap_servers=[brokers])
 
 # Initialize Flask
 app = Flask(__name__)
@@ -51,6 +48,8 @@ def extract_document():
     filename = secure_filename(file.filename)
     file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(file_path)
+
+    kafka_producer.send_result(True, { "doc_id": doc_id, "doc_type": doc_type }, "ocr_requests")
 
     try:
         # ✅ Extract text using the Hybrid Optimized OCR Pipeline
@@ -85,7 +84,7 @@ def extract_document():
     
     # Send result to message broker
     data = { "doc_id": doc_id, "doc_type": doc_type, "result": result }
-    kafka_client.send_result(True, data)
+    kafka_producer.send_result(True, data, "ocr_results")
 
     return jsonify(result)
 
